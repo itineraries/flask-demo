@@ -12,19 +12,34 @@ String.prototype.padLeft = function(length, padChar){
 }
 window.addEventListener("load", function(){
 	// Add the buttons in the last column.
-	var btnSwitchOrigDest = document.createElement("button"),
-		btnNow = document.createElement("button");
+	var divPlaceFooter = document.getElementById("place-footer"),
+		inputOrigin = document.getElementById("text-orig"),
+		inputDestination = document.getElementById("text-dest"),
+		btnUseGeolocation = document.createElement("button"),
+		btnSwitchOrigDest = document.createElement("button"),
+		btnNow = document.createElement("button"),
+		locationCallback = function(position){
+			inputOrigin.value =
+				position.coords.latitude + "," + position.coords.longitude;
+		};
+	// This button sets the origin to the user's current location.
+	if(navigator.geolocation){
+		btnUseGeolocation.textContent = "Use Current Location as Origin";
+		btnUseGeolocation.addEventListener("click", function(event){
+			event.preventDefault();
+			navigator.geolocation.getCurrentPosition(locationCallback);
+		});
+		divPlaceFooter.appendChild(btnUseGeolocation);
+	}
 	// This button swaps the origin and destination.
 	btnSwitchOrigDest.textContent = "Reverse";
 	btnSwitchOrigDest.addEventListener("click", function(event){
 		event.preventDefault();
-		var input_orig = document.getElementById("text-orig"),
-			input_dest = document.getElementById("text-dest"),
-			temp = input_orig.value;
-		input_orig.value = input_dest.value;
-		input_dest.value = temp;
+		var temp = inputOrigin.value;
+		inputOrigin.value = inputDestination.value;
+		inputOrigin.value = temp;
 	});
-	document.getElementById("switch-orig-dest").appendChild(btnSwitchOrigDest);
+	divPlaceFooter.appendChild(btnSwitchOrigDest);
 	// This button sets the "day" field to the current of the week and the
 	// "when" field to the current time.
 	btnNow.textContent = "Now";
