@@ -37,7 +37,7 @@ window.addEventListener("load", function(){
 		event.preventDefault();
 		var temp = inputOrigin.value;
 		inputOrigin.value = inputDestination.value;
-		inputOrigin.value = temp;
+		inputDestination.value = temp;
 	});
 	divPlaceFooter.appendChild(btnSwitchOrigDest);
 	// This button sets the "day" field to the current of the week and the
