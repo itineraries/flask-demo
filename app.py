@@ -51,16 +51,16 @@ def root():
         [(s, False) for s in weekdays[:dow]] + \
         [(weekdays[dow], True)] + \
         [(s, False) for s in weekdays[dow+1:]]
+    # Set the walking time limit.
+    if walking_max_mode == "custom":
+        agency_walking.set_max_seconds(walking_max_custom * 60.0)
+    elif walking_max_mode == "zero":
+        agency_walking.set_max_seconds(0.0)
+    else:
+        walking_max_mode = "unlimited"
+        agency_walking.set_max_seconds_unlimited()
     # Check whether we should get an itinerary.
     if origin and destination:
-        # Set the walking time limit.
-        if walking_max_mode == "custom":
-            agency_walking.set_max_seconds(walking_max_custom * 60.0)
-        elif walking_max_mode == "zero":
-            agency_walking.set_max_seconds(0.0)
-        else:
-            walking_max_mode = "unlimited"
-            agency_walking.set_max_seconds_unlimited()
         # Get the itinerary.
         try:
             itinerary = itinerary_finder.find_itinerary(
