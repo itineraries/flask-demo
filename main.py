@@ -3,10 +3,16 @@ import cgi, datetime, dateutil.parser, os.path, sys
 from flask import Flask, render_template, request, send_from_directory, url_for
 sys.path.insert(
     1,
+    # ../scheduler-and-mapper/
     os.path.join(
         os.path.dirname(os.path.dirname(__file__)),
         "scheduler-and-mapper"
     )
+)
+sys.path.insert(
+    1,
+    # ./scheduler-and-mapper/
+    os.path.join(os.path.dirname(__file__), "scheduler-and-mapper")
 )
 import agency_nyu, agency_walking, agency_walking_static, \
     agency_walking_dynamic, itinerary_finder, stops
