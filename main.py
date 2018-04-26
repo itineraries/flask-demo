@@ -38,7 +38,7 @@ def root():
     except KeyError:
         origin = ""
         destination = ""
-    depart = bool(request.args.get("depart", True))
+    depart = request.args.get("depart", None) != "0"
     try:
         datetime_trip = dateutil.parser.parse(
             request.args.get("day", "") +
