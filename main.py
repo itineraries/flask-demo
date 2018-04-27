@@ -74,7 +74,9 @@ def root():
         walking_max_mode = "unlimited"
         agency_walking.set_max_seconds_unlimited()
     # Check whether we should get an itinerary.
+    document_title = "NYU CTIP"
     if origin and destination:
+        document_title = origin + " to " + destination + " - " + document_title
         # Get the itinerary.
         try:
             itinerary = itinerary_finder.find_itinerary(
@@ -100,6 +102,7 @@ def root():
     # Reflect the parameters back to the user and send the itinerary.
     return render_template(
         "index.html",
+        document_title=document_title,
         origin=origin,
         destination=destination,
         stops=stops.name_to_point.keys(),
