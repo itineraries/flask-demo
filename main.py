@@ -40,6 +40,13 @@ def get_datetime_trip():
         )
     except (KeyError, ValueError):
         return datetime.datetime.now(TIMEZONE).replace(tzinfo=None)
+def get_weekdays_checked(datetime_trip):
+    # Make a list of the days of the week and select the one in datetime_trip.
+    dow = (datetime_trip.weekday() + 1) % 7
+    return \
+        [(s, False) for s in weekdays[:dow]] + \
+        [(weekdays[dow], True)] + \
+        [(s, False) for s in weekdays[dow+1:]]
 
 @app.route("/")
 def root():
@@ -57,12 +64,7 @@ def root():
         walking_max_custom = float(request.args["walking-max-custom"])
     except (KeyError, ValueError):
         walking_max_custom = 5.0
-    # Make a list of the days of the week and select the one in datetime_trip.
-    dow = (datetime_trip.weekday() + 1) % 7
-    weekdays_checked = \
-        [(s, False) for s in weekdays[:dow]] + \
-        [(weekdays[dow], True)] + \
-        [(s, False) for s in weekdays[dow+1:]]
+    weekdays_checked = get_weekdays_checked(datetime_trip)
     # Set the walking time limit.
     if walking_max_mode == "custom":
         agency_walking.set_max_seconds(walking_max_custom * 60.0)
