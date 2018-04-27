@@ -2,7 +2,7 @@
 '''
 This module implements a uniform cost search.
 '''
-import attr, collections, datetime, heapq, pickle
+import attr, collections, datetime, heapq, itertools
 import stops
 from agency_common import Agency
 from common import WeightedEdge
@@ -28,8 +28,7 @@ def weighted_edges(
     datetime_trip,
     depart,
     consecutive_agency,
-    extra_nodes=frozenset(),
-    disallowed_edges=()
+    extra_nodes=frozenset()
 ):
     '''
     Generates directed, weighted edges from known_node.
@@ -53,17 +52,13 @@ def weighted_edges(
         extra_nodes:
             a set or frozenset of nodes to consider in addition to the
             nodes that are already in stops.neighbor_node_to_point.keys()
-        disallowed_edges:
-            a container that supports the membership test operations and that
-            contains instances of WeightedEdge, exact matches of which should
-            not be yielded
     Yields:
         A WeightedEdge object
     '''
     for node in (stops.name_to_point.keys() | extra_nodes) - {known_node}:
         for agency in agencies:
             try:
-                e = next(
+                weight = next(
                     # depart = True: Only process edges from known_node.
                     # depart = False: Only process edges to known_node.
                     agency.get_edge(
@@ -81,16 +76,15 @@ def weighted_edges(
             except StopIteration:
                 pass
             else:
-                result = WeightedEdge(
+                edge = WeightedEdge(
                     agency=agency,
-                    datetime_depart=e.datetime_depart,
-                    datetime_arrive=e.datetime_arrive,
-                    human_readable_instruction=e.human_readable_instruction,
+                    datetime_depart=weight.datetime_depart,
+                    datetime_arrive=weight.datetime_arrive,
+                    human_readable_instruction=weight.human_readable_instruction,
                     from_node=node if depart else known_node,
                     to_node=known_node if depart else node
                 )
-                if result not in disallowed_edges:
-                    yield result
+                yield edge
 def find_itinerary(
     agencies,
     origin,
@@ -167,26 +161,24 @@ def find_itinerary(
             # Mark the current node as visited.
             # A visited node will never be checked again.
             visited.add(current_node)
-            # For the current node, consider all of its unvisited neighbors
-            # and calculate their tentative distances. Compare the newly
-            # calculated tentative distance to the currently assigned value
-            # and assign the smaller one.
-            for e in weighted_edges(
+            # For the current node, consider all of its unvisited neighbors.
+            previous_node_current_node_edge = previous_node[current_node].edge
+            for edge in weighted_edges(
                 agencies,
                 current_node,
-                previous_node[current_node].edge.datetime_arrive
+                previous_node_current_node_edge.datetime_arrive
                 if depart else
-                previous_node[current_node].edge.datetime_depart,
+                previous_node_current_node_edge.datetime_depart,
                 depart,
-                previous_node[current_node].edge.agency,
-                extra_nodes,
-                disallowed_edges
+                previous_node_current_node_edge.agency,
+                extra_nodes
             ):
-                neighbor_node = e.from_node if depart else e.to_node
+                neighbor_node = edge.from_node if depart else edge.to_node
                 num_stops_to_node_new = previous_node[
                     current_node
                 ].num_stops_to_node + 1
                 n = previous_node[neighbor_node]
+                # Calculate the unvisited neighbor's tentative distance.
                 if depart:
                     neighbor_distance_old = (
                         n.edge.datetime_arrive,
@@ -194,9 +186,9 @@ def find_itinerary(
                         datetime.datetime.max - n.edge.datetime_depart
                     )
                     neighbor_distance_new = (
-                        e.datetime_arrive,
+                        edge.datetime_arrive,
                         num_stops_to_node_new,
-                        datetime.datetime.max - e.datetime_depart
+                        datetime.datetime.max - edge.datetime_depart
                     )
                 else:
                     neighbor_distance_old = (
@@ -205,28 +197,32 @@ def find_itinerary(
                         n.edge.datetime_arrive
                     )
                     neighbor_distance_new = (
-                        datetime.datetime.max - e.datetime_depart,
+                        datetime.datetime.max - edge.datetime_depart,
                         num_stops_to_node_new,
-                        e.datetime_arrive
+                        edge.datetime_arrive
                     )
+                # Compare the newly calculated tentative distance to the
+                # currently assigned value and assign the smaller one.
                 if neighbor_distance_new < neighbor_distance_old:
-                    previous_node[neighbor_node] = PreviousNode(
-                        WeightedEdge(
-                            agency=e.agency,
-                            datetime_arrive=e.datetime_arrive,
-                            datetime_depart=e.datetime_depart,
-                            human_readable_instruction=
-                                e.human_readable_instruction,
-                            from_node=
-                                current_node if depart else neighbor_node,
-                            to_node=neighbor_node if depart else current_node
-                        ),
-                        num_stops_to_node=num_stops_to_node_new
+                    direction = WeightedEdge(
+                        agency=edge.agency,
+                        datetime_arrive=edge.datetime_arrive,
+                        datetime_depart=edge.datetime_depart,
+                        human_readable_instruction=
+                            edge.human_readable_instruction,
+                        from_node=
+                            current_node if depart else edge.to_node,
+                        to_node=edge.from_node if depart else current_node
                     )
-                    heapq.heappush(
-                        visit_queue,
-                        neighbor_distance_new + (neighbor_node,)
-                    )
+                    if direction not in disallowed_edges:
+                        previous_node[neighbor_node] = PreviousNode(
+                            direction,
+                            num_stops_to_node=num_stops_to_node_new
+                        )
+                        heapq.heappush(
+                            visit_queue,
+                            neighbor_distance_new + (neighbor_node,)
+                        )
             # If the target node has been visited, then break.
             if current_node == stop_algorithm:
                 break
@@ -262,3 +258,85 @@ def find_itinerary(
         itinerary.pop()
     # We are done.
     return itinerary
+def find_itineraries(
+    agencies_to_vary,
+    *args,
+    max_count=None,
+    disallowed_edges=None,
+    **kwargs
+):
+    '''
+    Finds multiple itineraries instead of just one. This is a generator; the
+    itineraries are yielded. Each itinerary has one or more different edges
+    than the others. The agency of every varied edge will be in
+    agencies_to_vary. A maximum of max_count itineraries will be yielded.
+    
+    Arguments:
+        agencies_to_vary:
+            A container that supports membership test operations and that
+            contains subclasses of Agency. The yielded itineraries will differ
+            in edges whose agencies are in this container. Some or all agencies
+            will make a difference.
+        max_count:
+            An integer or None. No more than this number of itineraries will be
+            yielded. If this argument is None, then there will be no limit.
+        disallowed_edges:
+            A set or frozenset that contains instances of WeightedEdge, exact
+            matches of which will not be in any of the yielded itineraries
+        *args and **kwargs:
+            All other arguments will be forwarded to find_itinerary.
+    '''
+    # Handle the maximum number of itineraries here while handling the rest of
+    # the computations in a recursive call.
+    if max_count is not None:
+        for itinerary in find_itineraries(
+            agencies_to_vary,
+            *args,
+            max_count=None,
+            disallowed_edges=disallowed_edges,
+            **kwargs
+        ):
+            # We could use itertools.islice, but this is simpler.
+            max_count -= 1
+            if max_count < 0:
+                return
+            yield itinerary
+    # Find an itinerary normally.
+    if disallowed_edges is None:
+        disallowed_edges = frozenset()
+    try:
+        itinerary = find_itinerary(
+            *args,
+            disallowed_edges=disallowed_edges,
+            **kwargs
+        )
+    except ItineraryNotPossible:
+        return
+    else:
+        yield itinerary
+    # Find edges whose agencies are in agencies_to_vary.
+    edges_to_disallow = {
+        edge for edge in itinerary if edge.agency in agencies_to_vary
+    }
+    # Recursively find more itineraries with different combinations of
+    # disallowed edges.
+    generators = collections.deque()
+    for i in range(1, len(edges_to_disallow) + 1):
+        for de_combo in itertools.combinations(edges_to_disallow, i):
+            generators.append(
+                find_itineraries(
+                    agencies_to_vary,
+                    *args,
+                    max_count=None,
+                    disallowed_edges=disallowed_edges.union(de_combo),
+                    **kwargs
+                )
+            )
+    # Yield itineraries from the generators, breadth-first.
+    while generators:
+        for generator in generators:
+            try:
+                yield next(generator)
+            except StopIteration:
+                generators.remove(generator)
+                break
