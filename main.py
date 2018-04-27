@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cgi, datetime, dateutil.parser, os.path, sys
+import cgi, datetime, dateutil.parser, os.path, pytz, sys
 from flask import Flask, render_template, request, send_from_directory, url_for
 for sam_dir in (
     # ./scheduler-and-mapper/
@@ -17,6 +17,7 @@ for sam_dir in (
         break
 import agency_nyu, agency_walking, agency_walking_static, \
     agency_walking_dynamic, itinerary_finder, stops
+TIMEZONE = pytz.timezone("America/New_York")
 
 agencies = (
     agency_nyu.AgencyNYU,
@@ -29,6 +30,17 @@ weekdays = tuple(
     datetime.date(2006, 1, d).strftime("%A") for d in range(1, 8)
 )
 
+def get_datetime_trip():
+    # Combine the "day" and "when" GET parameters and parse them together.
+    try:
+        return dateutil.parser.parse(
+            request.args.get("day", "") +
+            " " +
+            request.args["when"]
+        )
+    except (KeyError, ValueError):
+        return datetime.datetime.now(TIMEZONE).replace(tzinfo=None)
+
 @app.route("/")
 def root():
     # Read the parameters.
@@ -39,14 +51,7 @@ def root():
         origin = ""
         destination = ""
     depart = request.args.get("depart", None) != "0"
-    try:
-        datetime_trip = dateutil.parser.parse(
-            request.args.get("day", "") +
-            " " +
-            request.args["when"]
-        )
-    except (KeyError, ValueError):
-        datetime_trip = datetime.datetime.now()
+    datetime_trip = get_datetime_trip()
     walking_max_mode = request.args.get("walking-max", None)
     try:
         walking_max_custom = float(request.args["walking-max-custom"])
