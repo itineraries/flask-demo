@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>NYU CTIP</title>
+		<title>{{ document_title }}</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link
@@ -21,13 +21,19 @@
 				<a href="https://www.wecsam.com/">&#9668; Home</a>
 			</div>
 			<h1>
-				New York University Campus Transportation Itinerary Planner
+				New York University<br>
+				Campus Transportation Itinerary Planner
 			</h1>
+			<h2>Itinerary Finder</h2>
 			<p>
 				Enter your trip information below and then click Find
 				Itinerary. You can enter street addresses for the origin and
 				destination or enter the names of bus stops. One can be a
 				street address while the other is the name of a bus stop.
+			</p>
+			<p>
+				<a href="/departures">Click here</a> to see just departures
+				from a given stop.
 			</p>
 			<form method="get" id="input">
 				<fieldset>
@@ -172,7 +178,7 @@
 					<div class="fieldset-footer">
 						<input type="submit" value="Find Itinerary">
 						or
-						<a href="/">Reset</a>
+						<a href="{{ request.path }}">Reset</a>
 					</div>
 				</fieldset>
 				<datalist id="stops">{%
@@ -183,9 +189,7 @@
 				%}
 				</datalist>
 			</form>
-			<div id="output">
-				{{ output_escaped|safe }}
-			</div>
+			<div id="output">{{ output_escaped|safe }}</div>
 		</div>
 		<script
 			type="text/javascript"

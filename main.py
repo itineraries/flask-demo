@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cgi, datetime, dateutil.parser, os.path, sys
+import cgi, datetime, dateutil.parser, os.path, pytz, sys
 from flask import Flask, render_template, request, send_from_directory, url_for
 for sam_dir in (
     # ./scheduler-and-mapper/
@@ -16,7 +16,8 @@ for sam_dir in (
         sys.path.insert(1, sam_dir)
         break
 import agency_nyu, agency_walking, agency_walking_static, \
-    agency_walking_dynamic, itinerary_finder, stops
+    agency_walking_dynamic, departure_lister, itinerary_finder, stops
+TIMEZONE = pytz.timezone("America/New_York")
 
 agencies = (
     agency_nyu.AgencyNYU,
@@ -29,6 +30,24 @@ weekdays = tuple(
     datetime.date(2006, 1, d).strftime("%A") for d in range(1, 8)
 )
 
+def get_datetime_trip():
+    # Combine the "day" and "when" GET parameters and parse them together.
+    try:
+        return dateutil.parser.parse(
+            request.args.get("day", "") +
+            " " +
+            request.args["when"]
+        )
+    except (KeyError, ValueError):
+        return datetime.datetime.now(TIMEZONE).replace(tzinfo=None)
+def get_weekdays_checked(datetime_trip):
+    # Make a list of the days of the week and select the one in datetime_trip.
+    dow = (datetime_trip.weekday() + 1) % 7
+    return \
+        [(s, False) for s in weekdays[:dow]] + \
+        [(weekdays[dow], True)] + \
+        [(s, False) for s in weekdays[dow+1:]]
+
 @app.route("/")
 def root():
     # Read the parameters.
@@ -39,25 +58,13 @@ def root():
         origin = ""
         destination = ""
     depart = request.args.get("depart", None) != "0"
-    try:
-        datetime_trip = dateutil.parser.parse(
-            request.args.get("day", "") +
-            " " +
-            request.args["when"]
-        )
-    except (KeyError, ValueError):
-        datetime_trip = datetime.datetime.now()
+    datetime_trip = get_datetime_trip()
     walking_max_mode = request.args.get("walking-max", None)
     try:
         walking_max_custom = float(request.args["walking-max-custom"])
     except (KeyError, ValueError):
         walking_max_custom = 5.0
-    # Make a list of the days of the week and select the one in datetime_trip.
-    dow = (datetime_trip.weekday() + 1) % 7
-    weekdays_checked = \
-        [(s, False) for s in weekdays[:dow]] + \
-        [(weekdays[dow], True)] + \
-        [(s, False) for s in weekdays[dow+1:]]
+    weekdays_checked = get_weekdays_checked(datetime_trip)
     # Set the walking time limit.
     if walking_max_mode == "custom":
         agency_walking.set_max_seconds(walking_max_custom * 60.0)
@@ -67,32 +74,40 @@ def root():
         walking_max_mode = "unlimited"
         agency_walking.set_max_seconds_unlimited()
     # Check whether we should get an itinerary.
+    document_title = "NYU CTIP"
     if origin and destination:
-        # Get the itinerary.
-        try:
-            itinerary = itinerary_finder.find_itinerary(
-                agencies,
-                origin,
-                destination,
-                datetime_trip,
-                depart
-            )
-        except itinerary_finder.ItineraryNotPossible:
+        document_title = origin + " to " + destination + " - " + document_title
+        if origin == destination:
             output_escaped = \
-                "<p>This itinerary is not possible either because there is " \
-                "no continuous path from the origin to the destination or " \
-                "because no agency recognized the origin or destination.</p>"
+                "<p>The origin and destination are the same.</p>\n\t\t\t"
         else:
-            output_escaped = \
-                "<p>Itinerary:</p><ol>" + "".join(
-                    "<li>" + cgi.escape(str(direction)) + "</li>"
-                    for direction in itinerary
-                ) + "</ol>"
+            # Get the itinerary.
+            try:
+                itinerary = itinerary_finder.find_itinerary(
+                    agencies,
+                    origin,
+                    destination,
+                    datetime_trip,
+                    depart
+                )
+            except itinerary_finder.ItineraryNotPossible:
+                output_escaped = \
+                    "<p>This itinerary is not possible either because there " \
+                    "is no continuous path from the origin to the " \
+                    "destination or because no agency recognized the origin " \
+                    "or destination.</p>\n\t\t\t"
+            else:
+                output_escaped = \
+                    "\n\t\t\t\t<p>Itinerary:</p>\n\t\t\t\t<ol>\n" + "".join(
+                        "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
+                        for direction in itinerary
+                    ) + "\t\t\t\t</ol>\n\t\t\t"
     else:
         output_escaped = ""
     # Reflect the parameters back to the user and send the itinerary.
     return render_template(
         "index.html",
+        document_title=document_title,
         origin=origin,
         destination=destination,
         stops=stops.name_to_point.keys(),
@@ -101,6 +116,41 @@ def root():
         when=datetime_trip.strftime("%H:%M"),
         walking_max_mode=walking_max_mode,
         walking_max_custom=walking_max_custom,
+        output_escaped=output_escaped
+    )
+
+@app.route("/departures")
+def departures():
+    # Read the parameters.
+    origin = request.args.get("orig", "").strip()
+    datetime_trip = get_datetime_trip()
+    weekdays_checked = get_weekdays_checked(datetime_trip)
+    # Check whether we should list departures.
+    document_title = "Departures - NYU CTIP"
+    if origin:
+        document_title = origin + " - " + document_title
+        # List the departures.
+        output_escaped = \
+            "\n\t\t\t\t<p>Departures from " + cgi.escape(origin) + \
+            ":</p>\n\t\t\t\t<ul>\n" + "".join(
+                "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
+                for direction in departure_lister.departure_list(
+                    agencies,
+                    origin,
+                    datetime_trip,
+                    20
+                )
+            ) + "\t\t\t\t</ul>\n\t\t\t"
+    else:
+        output_escaped = ""
+    # Reflect the parameters back to the user and list the departures.
+    return render_template(
+        "departures.html",
+        document_title=document_title,
+        origin=origin,
+        stops=stops.name_to_point.keys(),
+        weekdays_checked=weekdays_checked,
+        when=datetime_trip.strftime("%H:%M"),
         output_escaped=output_escaped
     )
 
