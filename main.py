@@ -91,10 +91,10 @@ def root():
                 "because no agency recognized the origin or destination.</p>"
         else:
             output_escaped = \
-                "<p>Itinerary:</p><ol>" + "".join(
-                    "<li>" + cgi.escape(str(direction)) + "</li>"
+                "\n\t\t\t\t<p>Itinerary:</p>\n\t\t\t\t<ol>\n" + "".join(
+                    "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
                     for direction in itinerary
-                ) + "</ol>"
+                ) + "\t\t\t\t</ol>\n\t\t\t"
     else:
         output_escaped = ""
     # Reflect the parameters back to the user and send the itinerary.
