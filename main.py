@@ -77,26 +77,31 @@ def root():
     document_title = "NYU CTIP"
     if origin and destination:
         document_title = origin + " to " + destination + " - " + document_title
-        # Get the itinerary.
-        try:
-            itinerary = itinerary_finder.find_itinerary(
-                agencies,
-                origin,
-                destination,
-                datetime_trip,
-                depart
-            )
-        except itinerary_finder.ItineraryNotPossible:
+        if origin == destination:
             output_escaped = \
-                "<p>This itinerary is not possible either because there is " \
-                "no continuous path from the origin to the destination or " \
-                "because no agency recognized the origin or destination.</p>"
+                "<p>The origin and destination are the same.</p>\n\t\t\t"
         else:
-            output_escaped = \
-                "\n\t\t\t\t<p>Itinerary:</p>\n\t\t\t\t<ol>\n" + "".join(
-                    "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
-                    for direction in itinerary
-                ) + "\t\t\t\t</ol>\n\t\t\t"
+            # Get the itinerary.
+            try:
+                itinerary = itinerary_finder.find_itinerary(
+                    agencies,
+                    origin,
+                    destination,
+                    datetime_trip,
+                    depart
+                )
+            except itinerary_finder.ItineraryNotPossible:
+                output_escaped = \
+                    "<p>This itinerary is not possible either because there " \
+                    "is no continuous path from the origin to the " \
+                    "destination or because no agency recognized the origin " \
+                    "or destination.</p>\n\t\t\t"
+            else:
+                output_escaped = \
+                    "\n\t\t\t\t<p>Itinerary:</p>\n\t\t\t\t<ol>\n" + "".join(
+                        "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
+                        for direction in itinerary
+                    ) + "\t\t\t\t</ol>\n\t\t\t"
     else:
         output_escaped = ""
     # Reflect the parameters back to the user and send the itinerary.
