@@ -110,7 +110,7 @@ def root():
         document_title=document_title,
         origin=origin,
         destination=destination,
-        stops=stops.name_to_point.keys(),
+        stops=stops.names_sorted,
         depart=depart,
         weekdays_checked=weekdays_checked,
         when=datetime_trip.strftime("%H:%M"),
@@ -148,7 +148,7 @@ def departures():
         "departures.html",
         document_title=document_title,
         origin=origin,
-        stops=stops.name_to_point.keys(),
+        stops=stops.names_sorted,
         weekdays_checked=weekdays_checked,
         when=datetime_trip.strftime("%H:%M"),
         output_escaped=output_escaped
