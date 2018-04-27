@@ -13,6 +13,7 @@ FILES_TO_COPY = (
 	"common.py",
 	"common_nyu.py",
 	"common_walking_static.py",
+    "departure_lister.py",
 	"itinerary_finder.py",
 	"NYU.pickle",
 	"Stop Locations.csv",

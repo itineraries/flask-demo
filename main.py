@@ -16,7 +16,7 @@ for sam_dir in (
         sys.path.insert(1, sam_dir)
         break
 import agency_nyu, agency_walking, agency_walking_static, \
-    agency_walking_dynamic, itinerary_finder, stops
+    agency_walking_dynamic, departure_lister, itinerary_finder, stops
 TIMEZONE = pytz.timezone("America/New_York")
 
 agencies = (
@@ -116,6 +116,41 @@ def root():
         when=datetime_trip.strftime("%H:%M"),
         walking_max_mode=walking_max_mode,
         walking_max_custom=walking_max_custom,
+        output_escaped=output_escaped
+    )
+
+@app.route("/departures")
+def departures():
+    # Read the parameters.
+    origin = request.args.get("orig", "").strip()
+    datetime_trip = get_datetime_trip()
+    weekdays_checked = get_weekdays_checked(datetime_trip)
+    # Check whether we should list departures.
+    document_title = "Departures - NYU CTIP"
+    if origin:
+        document_title = origin + " - " + document_title
+        # List the departures.
+        output_escaped = \
+            "\n\t\t\t\t<p>Departures from " + cgi.escape(origin) + \
+            ":</p>\n\t\t\t\t<ul>\n" + "".join(
+                "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
+                for direction in departure_lister.departure_list(
+                    agencies,
+                    origin,
+                    datetime_trip,
+                    20
+                )
+            ) + "\t\t\t\t</ul>\n\t\t\t"
+    else:
+        output_escaped = ""
+    # Reflect the parameters back to the user and list the departures.
+    return render_template(
+        "departures.html",
+        document_title=document_title,
+        origin=origin,
+        stops=stops.name_to_point.keys(),
+        weekdays_checked=weekdays_checked,
+        when=datetime_trip.strftime("%H:%M"),
         output_escaped=output_escaped
     )
 
