@@ -101,7 +101,12 @@ def root():
                     "\n\t\t\t\t<p>Itinerary:</p>\n\t\t\t\t<ol>\n" + "".join(
                         "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
                         for direction in itinerary
-                    ) + "\t\t\t\t</ol>\n\t\t\t"
+                    ) + "\t\t\t\t</ol>\n\t\t\t\t<p>Total time: " + cgi.escape(
+                        str(
+                            itinerary[-1].datetime_arrive -
+                            itinerary[0].datetime_depart
+                        )
+                    ) + "</p>\n\t\t\t"
     else:
         output_escaped = ""
     # Reflect the parameters back to the user and send the itinerary.
