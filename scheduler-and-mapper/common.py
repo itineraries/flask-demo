@@ -68,6 +68,10 @@ class LineSegment:
             "{},{}".format(self.point_A.lat, self.point_A.lng),
             "{},{}".format(self.point_B.lat, self.point_B.lng)
         )
+@attr.s(frozen=True)
+class NodeAndTime:
+    node = attr.ib(converter=str)
+    time = attr.ib(validator=attr.validators.instance_of(datetime.datetime))
 @attr.s
 class Weight:
     # The datetime when the user leaves a node
@@ -89,6 +93,9 @@ class Weight:
         default=None,
         converter=attr.converters.optional(str)
     )
+    # A tuple of NodeAndTime objects that represent stops that the vehicle
+    # makes before the user disembarks
+    intermediate_nodes = attr.ib(default=(), converter=tuple)
 @attr.s(frozen=True)
 class WeightedEdge(Weight):
     '''
@@ -115,10 +122,16 @@ class WeightedEdge(Weight):
             result.append("Depart from")
             result.append(self.from_node)
             result.append(self.datetime_depart.strftime(self.TIME_STRING))
-        if self.human_readable_instruction is not None:
-            result.append(self.human_readable_instruction)
+        hri = self.get_human_readable_instruction()
+        if hri is not None:
+            result.append(hri)
         if self.datetime_arrive is not None:
             result.append("Arrive at")
             result.append(self.to_node)
             result.append(self.datetime_arrive.strftime(self.TIME_STRING))
         return " ".join(result)
+    def get_human_readable_instruction(self):
+        # This function is here because future versions of this software may
+        # generate the human-readable instruction when asked instead of
+        # whenever an edge (that might never get displayed) is generated.
+        return self.human_readable_instruction
