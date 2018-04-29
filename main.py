@@ -205,17 +205,27 @@ def departures():
     if origin:
         document_title = origin + " - " + document_title
         # List the departures.
-        output_escaped = \
-            "\n\t\t\t\t<p>Departures from " + cgi.escape(origin) + \
-            ":</p>\n\t\t\t\t<ul>\n" + "".join(
-                mark_weighted_edge_up(direction, "\t\t\t\t\t")
-                for direction in departure_lister.departure_list(
-                    agencies,
-                    origin,
-                    datetime_trip,
-                    20
-                )
-            ) + "\t\t\t\t</ul>\n\t\t\t"
+        markup_departures = "".join(
+            mark_weighted_edge_up(direction, "\t\t\t\t\t")
+            for direction in departure_lister.departure_list(
+                agencies,
+                origin,
+                datetime_trip,
+                20
+            )
+        )
+        # Put the list to the output to the user.
+        if markup_departures:
+            output_escaped = \
+                "\n\t\t\t\t<p>Departures from " + \
+                "<span class=\"itinerary-node\">" + cgi.escape(origin) + \
+                "</span>:</p>\n\t\t\t\t<ul>\n" + markup_departures + \
+                "\t\t\t\t</ul>\n\t\t\t"
+        else:
+            output_escaped = \
+                "\n\t\t\t\t<p>There are no departures from " \
+                "<span class=\"itinerary-node\">" + cgi.escape(origin) + \
+                "</span> after the specified time.</p>\n\t\t\t"
     else:
         output_escaped = ""
     # Reflect the parameters back to the user and list the departures.
