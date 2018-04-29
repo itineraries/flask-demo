@@ -25,6 +25,9 @@ agencies = (
     agency_walking_static.AgencyWalkingStatic,
     agency_walking_dynamic.AgencyWalkingDynamic,
 )
+agencies_to_vary = (
+    agency_nyu.AgencyNYU,
+)
 app = Flask(__name__)
 weekdays = tuple(
     # Sunday to Saturday
@@ -107,7 +110,7 @@ def mark_weighted_edge_up(edge, margin):
         margin + "\t\t\t<span class=\"itinerary-time\">" + cgi.escape(
             edge.datetime_arrive.strftime(TIME_FORMAT)
         ) + ":</span>\n" +
-        margin + "\t\tArrive at\n" +
+        margin + "\t\t\tArrive at\n" +
         margin + "\t\t\t<span class=\"itinerary-node\">" + cgi.escape(
             edge.to_node
         ) + "</span>.\n" +
@@ -152,31 +155,49 @@ def root():
                 "<p>The origin and destination are the same.</p>\n\t\t\t"
         else:
             # Get the itinerary.
-            try:
-                itinerary = itinerary_finder.find_itinerary(
-                    agencies,
-                    origin,
-                    destination,
-                    datetime_trip,
-                    depart
-                )
-            except itinerary_finder.ItineraryNotPossible:
-                output_escaped = \
-                    "<p>This itinerary is not possible either because there " \
-                    "is no continuous path from the origin to the " \
-                    "destination or because no agency recognized the origin " \
-                    "or destination.</p>\n\t\t\t"
-            else:
-                output_escaped = \
-                    "\n\t\t\t\t<p>Itinerary:</p>\n\t\t\t\t<ol>\n" + "".join(
-                        "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
-                        for direction in itinerary
-                    ) + "\t\t\t\t</ol>\n\t\t\t\t<p>Total time: " + cgi.escape(
+            markup_itineraries = "".join(
+                (
+                    # Start the list item.
+                    "\t\t\t\t\t<li>\n"
+                    # Add the travel time.
+                    "\t\t\t\t\t\t" + cgi.escape(
                         str(
                             itinerary[-1].datetime_arrive -
                             itinerary[0].datetime_depart
                         )
-                    ) + "</p>\n\t\t\t"
+                    ) + "\n"
+                    # Add the nested ordered list.
+                    "\t\t\t\t\t\t<ol>\n" + "".join(
+                        mark_weighted_edge_up(direction, "\t\t\t\t\t\t\t")
+                        for direction in itinerary
+                    ) +
+                    "\t\t\t\t\t\t</ol>\n" +
+                    # End the list item.
+                    "\t\t\t\t\t</li>\n"
+                )
+                for itinerary in itinerary_finder.find_itineraries(
+                    agencies_to_vary,
+                    agencies,
+                    origin,
+                    destination,
+                    datetime_trip,
+                    depart,
+                    max_count=3
+                )
+            )
+            if markup_itineraries:
+                output_escaped = "\n" \
+                    "\t\t\t\t<p>Itineraries:</p>\n" \
+                    "\t\t\t\t<ol>\n" + \
+                    markup_itineraries + \
+                    "\t\t\t\t</ol>\n" \
+                    "\t\t\t"
+            else:
+                output_escaped = \
+                    "\n\t\t\t\t<p>This itinerary is not possible either " \
+                    "because there is no continuous path from the origin to " \
+                    "the or because no agency recognized the origin or " \
+                    "destination.</p>\n\t\t\t"
     else:
         output_escaped = ""
     # Reflect the parameters back to the user and send the itinerary.
