@@ -17,6 +17,7 @@ for sam_dir in (
         break
 import agency_nyu, agency_walking, agency_walking_static, \
     agency_walking_dynamic, departure_lister, itinerary_finder, stops
+TIME_FORMAT = "%I:%M %p on %A"
 TIMEZONE = pytz.timezone("America/New_York")
 
 agencies = (
@@ -47,6 +48,75 @@ def get_weekdays_checked(datetime_trip):
         [(s, False) for s in weekdays[:dow]] + \
         [(weekdays[dow], True)] + \
         [(s, False) for s in weekdays[dow+1:]]
+def mark_weighted_edge_up(edge, margin):
+    '''
+    Renders a weighted edge as one HTML <li> element.
+    
+    The margin is inserted at the beginning of every line.
+    '''
+    return (
+        # Start the list item.
+        margin + "<li>\n" + 
+        # Add the human-readable instruction.
+        margin + "\t" + cgi.escape(
+            edge.get_human_readable_instruction()
+        ) + "\n" +
+        # Start the nested unordered list.
+        margin + "\t<ul>\n" + 
+        # Add the departure time.
+        margin + "\t\t<li>\n" +
+        margin + "\t\t\t<span class=\"itinerary-time\">" + cgi.escape(
+            edge.datetime_depart.strftime(TIME_FORMAT)
+        ) + ":</span>\n" +
+        margin + "\t\t\tDepart from\n" +
+        margin + "\t\t\t<span class=\"itinerary-node\">" + cgi.escape(
+            edge.from_node
+        ) + "</span>.\n" +
+        margin + "\t\t</li>\n" +
+        # Add the list of intermediate nodes.
+        (
+            (
+                # Start the list item.
+                margin + "\t\t<li>\n" +
+                # Add the heading for the nested list.
+                margin + "\t\t\tIntermediate stops:\n" +
+                # Start the nested ordered list.
+                margin + "\t\t\t<ol>\n" +
+                # Add the list items.
+                "".join(
+                    margin + "\t\t\t\t<li>\n" +
+                    margin + "\t\t\t\t\t<span class=\"itinerary-time\">" +
+                    cgi.escape(
+                        node_and_time.time.strftime(TIME_FORMAT)
+                    ) + ":</span>\n" +
+                    margin + "\t\t\t\t\t<span class=\"itinerary-node\">" +
+                    cgi.escape(node_and_time.node) + "</span>\n" +
+                    margin + "\t\t\t\t</li>\n"
+                    for node_and_time in edge.intermediate_nodes
+                ) +
+                # End the nested ordered list.
+                margin + "\t\t\t</ol>\n" +
+                # End the list item.
+                margin + "\t\t</li>\n"
+            )
+            if edge.intermediate_nodes else
+            ""
+        ) +
+        # Add the arrival time.
+        margin + "\t\t<li>\n" +
+        margin + "\t\t\t<span class=\"itinerary-time\">" + cgi.escape(
+            edge.datetime_arrive.strftime(TIME_FORMAT)
+        ) + ":</span>\n" +
+        margin + "\t\tArrive at\n" +
+        margin + "\t\t\t<span class=\"itinerary-node\">" + cgi.escape(
+            edge.to_node
+        ) + "</span>.\n" +
+        margin + "\t\t</li>\n" +
+        # End the nested unordered list.
+        margin + "\t</ul>\n" +
+        # End the list item.
+        margin + "</li>\n"
+    )
 
 @app.route("/")
 def root():
@@ -138,7 +208,7 @@ def departures():
         output_escaped = \
             "\n\t\t\t\t<p>Departures from " + cgi.escape(origin) + \
             ":</p>\n\t\t\t\t<ul>\n" + "".join(
-                "\t\t\t\t\t<li>" + cgi.escape(str(direction)) + "</li>\n"
+                mark_weighted_edge_up(direction, "\t\t\t\t\t")
                 for direction in departure_lister.departure_list(
                     agencies,
                     origin,
