@@ -34,6 +34,42 @@ weekdays = tuple(
     datetime.date(2006, 1, d).strftime("%A") for d in range(1, 8)
 )
 
+def days_hours_minutes(td):
+    '''
+    Breaks a datetime.timedelta into the days as an integer, the hours as an
+    integer, and the minutes as a float.
+    '''
+    return td.days, td.seconds // 3600, (td.seconds / 60) % 60
+def days_hours_minutes_string(td):
+    '''
+    Converts a datetime.timedelta into a string that contains days, hours, and
+    minutes.
+    '''
+    days, hours, minutes = days_hours_minutes(td)
+    result = []
+    if days:
+        if days == 1:
+            result.append("1 day")
+        else:
+            result.append("{} days".format(days))
+    if hours:
+        if hours == 1:
+            result.append("1 hour")
+        else:
+            result.append("{} hours".format(hours))
+    if minutes:
+        if minutes == 1:
+            result.append("1 minute")
+        else:
+            result.append("{:.0f} minutes".format(minutes))
+    if result:
+        if len(result) == 1:
+            return result[0]
+        if len(result) == 2:
+            return result[0] + " and " + result[1]
+        result[-1] = "and " + result[-1]
+        return ", ".join(result)
+    return "An instant"
 def get_datetime_trip():
     # Combine the "day" and "when" GET parameters and parse them together.
     try:
@@ -161,7 +197,7 @@ def root():
                     "\t\t\t\t\t<li>\n"
                     # Add the travel time.
                     "\t\t\t\t\t\t" + cgi.escape(
-                        str(
+                        days_hours_minutes_string(
                             itinerary[-1].datetime_arrive -
                             itinerary[0].datetime_depart
                         )
