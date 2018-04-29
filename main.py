@@ -107,7 +107,7 @@ def mark_weighted_edge_up(edge, margin):
         margin + "\t\t\t<span class=\"itinerary-time\">" + cgi.escape(
             edge.datetime_arrive.strftime(TIME_FORMAT)
         ) + ":</span>\n" +
-        margin + "\t\tArrive at\n" +
+        margin + "\t\t\tArrive at\n" +
         margin + "\t\t\t<span class=\"itinerary-node\">" + cgi.escape(
             edge.to_node
         ) + "</span>.\n" +
