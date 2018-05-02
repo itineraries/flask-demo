@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-import attr, cgi, datetime, dateutil.parser, json, os.path, pytz, sys
+import attr, cgi, datetime, dateutil.parser, json, os.path, pytz, sys, \
+    urllib.parse
 from place_autocomplete import autocomplete as place_autocomplete
-from flask import Flask, render_template, request, send_from_directory, url_for
+from flask import Flask, Response, abort, render_template, request, \
+    send_from_directory
 for sam_dir in (
     # ./scheduler-and-mapper/
     os.path.join(os.path.dirname(__file__), "scheduler-and-mapper"),
@@ -308,6 +310,8 @@ def async_place_autocomplete_handler(partial_input, offset):
         partial_input: the string that the user has typed in so far
         offset: the position of the user's cursor
     '''
+    if request.host != urllib.parse.urlparse(request.referrer).netloc:
+        abort(403)
     result = {"status": "OK"}
     try:
         # Get autocomplete suggestions from the sources that are defined in
@@ -320,7 +324,7 @@ def async_place_autocomplete_handler(partial_input, offset):
         ]
     except BaseException as e:
         result["status"] = "Error"
-    return json.dumps(result)
+    return Response(json.dumps(result), mimetype="application/json")
 
 @app.route("/favicon.ico")
 def favicon():
