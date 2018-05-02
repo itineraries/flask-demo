@@ -9,6 +9,11 @@ to serve itineraries over a web interface.
    to `..` so that `scheduler-and-mapper` and `flask-demo` are in the same
    parent directory. Follow the setup instructions for `scheduler-and-mapper`.
 2. Install Python dependencies by executing `pip install -r requirements.txt`.
+3. Get a
+   [Google Maps Place Autocomplete API key](https://developers.google.com/places/web-service/autocomplete)
+   and either store it in an environment variable called
+   `GMAPS_PLACE_AUTOCOMPLETE_KEY` or store it with this command:
+   `keyring set google_maps place_autocomplete`
 
 ## Note: Production Branch
 The `master` branch should never contain files from the `scheduler-and-mapper`
