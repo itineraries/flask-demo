@@ -102,3 +102,6 @@ ENV/
 
 # Minified JS
 static/app.min.js
+
+# Cache files
+place_autocomplete/cache_*

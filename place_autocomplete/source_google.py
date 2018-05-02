@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
-import json, keyring, os, requests
+import atexit, collections, flask, itertools, json, keyring, os, pickle, \
+    requests
 from . import Suggestion
 SEARCH_CIRCLE_CENTER = "40.72797042,-73.98642518"
 SEARCH_CIRCLE_RADIUS = "4500"
+CACHE_FILE = os.path.join(os.path.dirname(__file__), "cache_google.pickle")
+CACHE_MAX_ENTRIES = 1000
 
 try:
     _apikey = os.environ["GMAPS_PLACE_AUTOCOMPLETE_KEY"]
 except KeyError:
     _apikey = keyring.get_password("google_maps", "place_autocomplete")
 
+_cache = collections.OrderedDict()
+
 def get_suggestions(partial_input, offset=None):
+    cache_key = (partial_input, offset or len(partial_input))
+    try:
+        return _cache[cache_key]
+    except KeyError:
+        pass
     # Build the URL parameters.
     # See https://developers.google.com/places/web-service/autocomplete for
     # information about these parameters.
@@ -83,4 +93,33 @@ def get_suggestions(partial_input, offset=None):
                     result.append(suggestion)
             else:
                 print("place_autocomplete: info: status:", status)
+    # Add the result to the cache. If the cache is too large, delete the oldest
+    # entries.
+    _cache[cache_key] = result
+    if len(_cache) > CACHE_MAX_ENTRIES:
+        for key in itertools.islice(_cache.keys(), CACHE_MAX_ENTRIES // 10):
+            del _cache[key]
+    # We are done.
     return result
+def load_cache():
+    try:
+        with open(CACHE_FILE, "rb") as f:
+            _cache.update(pickle.load(f))
+    except (EOFError, OSError, TypeError):
+        pass
+def save_cache():
+    if _cache:
+        try:
+            with open(CACHE_FILE, "wb") as f:
+                pickle.dump(_cache, f)
+        except OSError as e:
+            print("source_google: warning: unable to save cache file")
+            print(e)
+
+if flask.app.get_env() == "production" or \
+    os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    # The Flask reloader has a master and child process.
+    # Only save and load the cache in the master process.
+    # https://stackoverflow.com/a/25519547/1149181
+    atexit.register(save_cache)
+    load_cache()
