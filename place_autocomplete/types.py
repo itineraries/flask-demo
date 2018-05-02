@@ -8,38 +8,39 @@ class Suggestion:
     
     Attributes:
         main_text_parts:
-            A list of Substring objects that, when joined, are a string that
-            partially or fully matches the input string
+            A list of strings that, when joined, are a string that partially
+            or fully matches the input string. Even indices are strings that
+            matched something in the input string, and odd indices are strings
+            that did not.
         secondary_text:
             Some additional text that is related to the main text but that does
-            not necessarily match with the input string
+            not necessarily match with the input string.
     '''
-    @attr.s
-    class Substring:
-        '''
-        This class represents one match in the main text of a Suggestion.
-        
-        Attributes:
-            text:
-                A string
-            is_match:
-                Whether this string matched something in the input string
-        '''
-        text = attr.ib(converter=str)
-        is_match = attr.ib(converter=bool)
-        def __str__(self):
-            if self.is_match:
-                return "*" + self.text + "*"
-            return self.text
     secondary_text = attr.ib(converter=str)
     main_text_parts = attr.ib(default=attr.Factory(list))
     @property
     def main_text(self):
-        return "".join(str(part) for part in self.main_text_parts)
+        return "".join(
+            (str(part) if i & 1 else "*" + str(part) + "*")
+            for i, part in enumerate(self.main_text_parts)
+        )
     def __str__(self):
         return self.main_text + "\n" + self.secondary_text
-    def add_main_text_part(self, *args, **kwargs):
-        self.main_text_parts.append(self.Substring(*args, **kwargs))
+    def add_main_text_part(self, text, is_match):
+        if len(self.main_text_parts) & 1 == is_match:
+            # Two scenarios:
+            #  - The next index is odd, and the text did match.
+            #  - The next index is even, and the text did not match.
+            if self.main_text_parts:
+                self.main_text_parts[-1] += text
+            else:
+                self.main_text_parts.append("")
+                self.main_text_parts.append(text)
+        else:
+            # Two scenarios:
+            #  - The next index is odd, and the text did not match.
+            #  - The next index is even, and the text did match.
+            self.main_text_parts.append(text)
 @attr.s(frozen=True)
 class SourceSection:
     '''
