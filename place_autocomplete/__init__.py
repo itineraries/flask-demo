@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from .types import SourceSection
-from .place_google import get_suggestions as gs_google
+from .source_google import get_suggestions as gs_google
 
 def autocomplete(partial_input, offset=None):
     # Get autocomplete suggestions from all sources.
