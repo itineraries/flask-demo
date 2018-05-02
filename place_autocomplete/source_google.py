@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import json, keyring, os, requests
-from .types import Suggestion
+from . import Suggestion
 SEARCH_CIRCLE_CENTER = "40.72797042,-73.98642518"
 SEARCH_CIRCLE_RADIUS = "4500"
 

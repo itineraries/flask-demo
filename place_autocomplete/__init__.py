@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from .types import SourceSection
+from .types import SourceSection, Suggestion
 from .source_google import get_suggestions as gs_google
 
 def autocomplete(partial_input, offset=None):
