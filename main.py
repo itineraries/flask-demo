@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import cgi, datetime, dateutil.parser, os.path, pytz, sys
+import attr, cgi, datetime, dateutil.parser, json, os.path, pytz, sys
+from place_autocomplete import autocomplete as place_autocomplete
 from flask import Flask, render_template, request, send_from_directory, url_for
 for sam_dir in (
     # ./scheduler-and-mapper/
@@ -296,6 +297,30 @@ def departures():
         when=datetime_trip.strftime("%H:%M"),
         output_escaped=output_escaped
     )
+
+@app.route("/async/place/autocomplete/<partial_input>/<int:offset>")
+def async_place_autocomplete_handler(partial_input, offset):
+    '''
+    Given the string that the user has typed in so far and the position of the
+    cursor, this route returns a JSON of autocomplete suggestions.
+    
+    Arguments:
+        partial_input: the string that the user has typed in so far
+        offset: the position of the user's cursor
+    '''
+    result = {"status": "OK"}
+    try:
+        # Get autocomplete suggestions from the sources that are defined in
+        # place_autocomplete/__init__.py. Pass them all to the client as
+        # dictionaries. See place_autocomplete/types.py for an explanation of
+        # the attributes.
+        result["sections"] = [
+            attr.asdict(source_section)
+            for source_section in place_autocomplete(partial_input, offset)
+        ]
+    except BaseException as e:
+        result["status"] = "Error"
+    return json.dumps(result)
 
 @app.route("/favicon.ico")
 def favicon():
