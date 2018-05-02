@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import attr, json, keyring, os, requests
+import json, keyring, os, requests
+from .types import Suggestion
 SEARCH_CIRCLE_CENTER = "40.72797042,-73.98642518"
 SEARCH_CIRCLE_RADIUS = "4500"
 
@@ -8,46 +9,7 @@ try:
 except KeyError:
     _apikey = keyring.get_password("google_maps", "place_autocomplete")
 
-@attr.s
-class Suggestion:
-    '''
-    This class represents one suggestion that autocomplete may return.
-    
-    Attributes:
-        main_text_parts:
-            A list of Substring objects that, when joined, are a string that
-            partially or fully matches the input string
-        secondary_text:
-            Some additional text that is related to the main text but that does
-            not necessarily match with the input string
-    '''
-    @attr.s
-    class Substring:
-        '''
-        This class represents one match in the main text of a Suggestion.
-        
-        Attributes:
-            text:
-                A string
-            is_match:
-                Whether this string matched something in the input string
-        '''
-        text = attr.ib(converter=str)
-        is_match = attr.ib(converter=bool)
-        def __str__(self):
-            if self.is_match:
-                return "*" + self.text + "*"
-            return self.text
-    secondary_text = attr.ib(converter=str)
-    main_text_parts = attr.ib(default=attr.Factory(list))
-    @property
-    def main_text(self):
-        return "".join(str(part) for part in self.main_text_parts)
-    def __str__(self):
-        return self.main_text + "\n" + self.secondary_text
-    def add_main_text_part(self, *args, **kwargs):
-        self.main_text_parts.append(self.Substring(*args, **kwargs))
-def autocomplete(partial_input, offset=None):
+def get_suggestions(partial_input, offset=None):
     # Build the URL parameters.
     # See https://developers.google.com/places/web-service/autocomplete for
     # information about these parameters.
@@ -122,15 +84,3 @@ def autocomplete(partial_input, offset=None):
             else:
                 print("place_autocomplete: info: status:", status)
     return result
-def test():
-    '''
-    Runs a simple test of the API.
-    '''
-    partial_input = input("Enter a partial name of a place: ")
-    print("Getting autocomplete results...\n")
-    for i, suggestion in enumerate(autocomplete(partial_input), start=1):
-        print("{:>3d}.".format(i), suggestion.main_text)
-        print("    ", suggestion.secondary_text, end="\n\n")
-
-if __name__ == "__main__":
-    test()
