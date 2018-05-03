@@ -125,8 +125,8 @@ PartialKeyDict.prototype.insert = function(key, value){
 };
 PartialKeyDict.prototype.get = function(key){
 	/*
-	Returns an array with all the keys and values where the key starts with the
-	given string. This array is in no particular order.
+	Returns an array of [key, value] pairs where the key starts with the given
+	string. This array is in no particular order.
 	
 	For example, consider this dictionary:
 	
@@ -135,8 +135,9 @@ PartialKeyDict.prototype.get = function(key){
 	In this case, get("FOO") could return [["FOOFOO", 1], ["FOOBAR", 2]] or
 	[["FOOBAR", 2], ["FOOFOO", 1]].
 	
-	Please do not modify the items in the returned array. Doing so will corrupt
-	the internal heap. If modification is needed, make a copy.
+	They [key, value] pairs are taken straight from the internal heap. As such,
+	please do not modify the returned keys. Doing so will corrupt the internal
+	heap. Modifying the values, on the other hand, is allowed.
 	*/
 	// Use an object as a set to keep track of nodes that we need to visit.
 	var index, maxKeyIndex, maxKey, toVisit = {0: true}, result = [];
