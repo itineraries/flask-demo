@@ -91,7 +91,7 @@ Suggestion.prototype.addMainTextPart = function(text, isMatch){
 /**
  *  This class provides a data structure that supports dictionary-like lookups
  *  but where only some characters from the beginning of each key being
- *  required.
+ *  required. Unlike a regular dictionary, this class allows duplicate keys.
  *  
  *  @constructor
  */
@@ -102,9 +102,10 @@ function PartialKeyDict(){
 PartialKeyDict.prototype.insert = function(key, value){
 	/*
 	Adds the key and value to the dictionary. Returns the new number of items.
-	All keys must be strings. Values can be of any type.
+	All keys must be strings. Values can be of any type. Unlike a regular
+	dictionary, this class allows duplicate keys. If you do not want duplicate
+	keys, check that this.getOne(key) === null before calling this function.
 	*/
-	// TODO: handle duplicate keys
 	var parentIndex, temp,
 		// Add the new item to the bottom of the heap.
 		newIndex = this.heap.push([key, value]) - 1;
@@ -185,6 +186,54 @@ PartialKeyDict.prototype.get = function(key){
 		// to check that part of the heap.
 	}
 	return result;
+};
+PartialKeyDict.prototype.getOneStartingFrom = function(key, index){
+	/*
+	This function is the same as PartialKeyDict.prototype.getOne except that
+	the starting node of the search should be specified through the second
+	argument.
+	
+	This algorithm takes, unfortunately, linear time. On average, the keys of
+	half of the nodes in the internal heap must be compared to the desired key.
+	If time is more important than space to you, you might want to store values
+	in a separate object and only use this class for the partial key matching.
+	Just keep in mind that this class allows duplicate keys while objects in
+	JavaScript do not.
+	*/
+	// If this node's key is equal to the desired key, then return the value.
+	if(this.heap[index][0] == key){
+		return this.heap[index][1];
+	}
+	if(this.heap[index][0] > key){
+		// Search this node's children.
+		var result;
+		// The left child is first.
+		index = index * 2 + 1;
+		if(index < this.heap.length){
+			result = this.getOneStartingFrom(key, index);
+			if(result !== null){
+				return result;
+			}
+			// The right child is next.
+			index += 1;
+			if(index < this.heap.length){
+				result = this.getOneStartingFrom(key, index);
+				if(result !== null){
+					return result;
+				}
+			}
+		}
+	}
+	// If this node's key is less than the desired key, none of its children
+	// can have a matching key. Call off the search.
+	return null;
+};
+PartialKeyDict.prototype.getOne = function(key){
+	/*
+	Returns the corresponding value for the given key. If the given key is not
+	in this PartialKeyDict, then null is returned.
+	*/
+	return this.getOneStartingFrom(key, 0);
 };
 
 function enableLocationAutocomplete(){
