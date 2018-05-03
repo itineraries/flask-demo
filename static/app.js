@@ -2,6 +2,12 @@
 // @output_file_name app.min.js
 // @compilation_level ADVANCED_OPTIMIZATIONS
 // ==/ClosureCompiler==
+/**
+ *  @preserve
+ *  
+ *  NYU CTIP Web
+ *  @author David Tsai
+ */
 
 function padLeft(str, length, padChar){
 	/*
