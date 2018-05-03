@@ -193,6 +193,11 @@
 			</form>
 			<div id="output">{{ output_escaped|safe }}</div>
 		</div>
+		<input
+			type="hidden"
+			id="google_maps_api_key"
+			value="{{ google_maps_api_key|e }}"
+		>
 		<script
 			type="text/javascript"
 			src="{{ url_for('static', filename='app.min.js') }}"

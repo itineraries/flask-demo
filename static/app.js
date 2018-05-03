@@ -9,11 +9,21 @@ function padLeft(str, length, padChar){
 	}
 	return str;
 }
+function getNameOfFunction(func){
+	if(func.name){
+		return func.name;
+	}
+	var funcAsStr = func.toString();
+	return funcAsStr.substring(9, funcAsStr.indexOf("("));
+}
+function googleMapsApiCallback(){}
 window.addEventListener("load", function(){
 	var inputOrigin, inputDestination, btnUseGeolocation, btnSwitchOrigDest,
 		btnNow, selectDay, inputTimeWhen,
 		divPlaceFooter = document.getElementById("place-footer"),
 		divUseNow = document.getElementById("use-now"),
+		inputGoogleMapsApiKey = document.getElementById("google_maps_api_key"),
+		scriptGoogleMapsApi = document.createElement("script"),
 		locationCallback = function(position){
 			inputOrigin.value =
 				position.coords.latitude + "," + position.coords.longitude;
@@ -82,5 +92,16 @@ window.addEventListener("load", function(){
 			});
 			divUseNow.appendChild(btnNow);
 		}
+	}
+	if(inputGoogleMapsApiKey){
+		scriptGoogleMapsApi.src = "https://maps.googleapis.com/maps/api/js?" +
+			"key=" + encodeURIComponent(inputGoogleMapsApiKey.value) + "&" +
+			"libraries=places&" +
+			"callback=" + encodeURIComponent(
+				getNameOfFunction(googleMapsApiCallback)
+			);
+        scriptGoogleMapsApi.async = true;
+		scriptGoogleMapsApi.defer = true;
+		document.body.appendChild(scriptGoogleMapsApi);
 	}
 });
