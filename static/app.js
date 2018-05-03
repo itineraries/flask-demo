@@ -3,6 +3,33 @@
 // @compilation_level ADVANCED_OPTIMIZATIONS
 // ==/ClosureCompiler==
 
+function padLeft(str, length, padChar){
+	/*
+	Pads a string on the left side to the specified length. If the string is
+	longer than the specified length, then it is returned without being
+	truncated.
+	
+	Arguments:
+		str: the string to pad
+		length: the desired length of the string
+		padChar: the character to add to the left side of the string
+	*/
+	while(str.length < length){
+		str = padChar + str;
+	}
+	return str;
+}
+function startsWith(a, b){
+	/*
+	Checks whether string A starts with string B.
+	
+	Arguments:
+		a: string A
+		b: string B
+	*/
+	return a.substr(0, b.length) == b;
+}
+
 /**
  *  This class represents one suggestion that autocomplete may return.
  *  
@@ -54,14 +81,105 @@ Suggestion.prototype.addMainTextPart = function(text, isMatch){
 		//  - The next index is even, and the text did match.
 		this.mainTextParts.push(text);
 	}
+};
+/**
+ *  This class provides a data structure that supports dictionary-like lookups
+ *  but where only some characters from the beginning of each key being
+ *  required.
+ *  
+ *  @constructor
+ */
+function PartialKeyDict(){
+	// Use a binary max heap to keep the keys sorted.
+	this.heap = [];
 }
-
-function padLeft(str, length, padChar){
-	while(str.length < length){
-		str = padChar + str;
+PartialKeyDict.prototype.insert = function(key, value){
+	/*
+	Adds the key and value to the dictionary. Returns the new number of items.
+	All keys must be strings. Values can be of any type.
+	*/
+	// TODO: handle duplicate keys
+	var parentIndex, temp,
+		// Add the new item to the bottom of the heap.
+		newIndex = this.heap.push([key, value]) - 1;
+	while(newIndex > 0){
+		// Find this node's parent.
+		parentIndex = Math.floor((newIndex - 1) / 2);
+		// If parent node's value is greater than the new value, stop.
+		if(this.heap[parentIndex][0] > key){
+			break;
+		}
+		// Swap the parent node and the new node.
+		temp = this.heap[parentIndex];
+		this.heap[parentIndex] = this.heap[newIndex];
+		this.heap[newIndex] = temp;
+		newIndex = parentIndex;
 	}
-	return str;
-}
+	return this.heap.length;
+};
+PartialKeyDict.prototype.get = function(key){
+	/*
+	Returns an array with all the keys and values where the key starts with the
+	given string. This array is in no particular order.
+	
+	For example, consider this dictionary:
+	
+	    {"FOOFOO": 1, "FOOBAR": 2, "BARFOO": 3}
+	
+	In this case, get("FOO") could return [["FOOFOO", 1], ["FOOBAR", 2]] or
+	[["FOOBAR", 2], ["FOOFOO", 1]].
+	
+	Please do not modify the items in the returned array. Doing so will corrupt
+	the internal heap. If modification is needed, make a copy.
+	*/
+	// Use an object as a set to keep track of nodes that we need to visit.
+	var index, maxKeyIndex, maxKey, toVisit = {0: true}, result = [];
+	// Visit all the nodes that are put in the set.
+	while(true){
+		// Find the index of the node with the greatest key.
+		maxKeyIndex = -1;
+		maxKey = "";
+		for(index in toVisit){
+			if(toVisit.hasOwnProperty(index)){
+				if(this.heap[index][0] >= maxKey){
+					maxKey = this.heap[index][0];
+					maxKeyIndex = index;
+				}
+			}
+		}
+		// If there were no nodes in the set, stop.
+		if(maxKeyIndex < 0){
+			break;
+		}
+		// Remove that node from the set of nodes to visit.
+		delete toVisit[maxKeyIndex];
+		// Check whether this node's key is greater than or equal to the key.
+		if(this.heap[maxKeyIndex][0] >= key){
+			if(startsWith(maxKey, key)){
+				// Add this node to the results.
+				result.push(this.heap[maxKeyIndex]);
+			}else if(result.length){
+				// We have been iterating through the keys in sorted order.
+				// We have iterated past the keys that start with the desired
+				// key. We can stop searching now.
+				break;
+			}
+			// Add this node's children to the set of nodes to visit.
+			var leftIndex = maxKeyIndex * 2 + 1, rightIndex = leftIndex + 1;
+			if(leftIndex < this.heap.length){
+				toVisit[leftIndex] = true;
+			}
+			if(rightIndex < this.heap.length){
+				toVisit[rightIndex] = true;
+			}
+		}
+		// If this node's key is less than the key, then we know that all of
+		// its children's keys will also be less than the key. We do not need
+		// to check that part of the heap.
+	}
+	return result;
+};
+
 function enableLocationAutocomplete(){
 	/*
 	This function enables a custom autocomplete suggestion list on all elements
