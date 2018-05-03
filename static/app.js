@@ -248,9 +248,8 @@ function enableLocationAutocomplete(){
 	group of suggestions in the list. The value is the callback. The callback
 	must take two arguments: 1) the element in which the user is typing and
 	2) another callback. When the suggestions have been computed, your callback
-	should call the second callback, which takes an array of suggestions as the
-	sole argument. Use makeSuggestion to create the items in the array of
-	suggestions.
+	should call the second callback, which takes an array of instances of
+	Suggestion as the sole argument.
 	
 	Note that if your source does not have any suggestions, it needs not call
 	the second callback.
