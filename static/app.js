@@ -243,16 +243,18 @@ function enableLocationAutocomplete(){
 	existing <datalist> elements and from the Google Maps Places Autocomplete
 	Service.
 	
-	To implement a new source, add a callback to locationAutocompleters. The
-	key should be a human-readable string that will show as a heading above the
-	group of suggestions in the list. The value is the callback. The callback
-	must take two arguments: 1) the element in which the user is typing and
-	2) another callback. When the suggestions have been computed, your callback
-	should call the second callback, which takes an array of instances of
-	Suggestion as the sole argument.
+	To implement a new source, add a callback, henceforth Callback A, to
+	locationAutocompleters. Callback A must take two arguments: 1) the element
+	in which the user is typing and 2) another callback, henceforth Callback B.
+	Callback B takes two arguments: 1) a heading, which is a human-readable
+	string that will show above the group of suggestions in the autocomplete
+	results, and 2) an array of instances of Suggestion.
 	
-	Note that if your source does not have any suggestions, it needs not call
-	the second callback.
+	When the suggestions have been computed, Callback A should call Callback B
+	to pass the heading a list of instances of Suggestion. If Callback A has no
+	suggestions, it needs not call Callback B. If Callback A has suggestions
+	under more than one heading, it should call Callback B once for every
+	heading.
 	
 	We are not simply using google.maps.places.Autocomplete because we want
 	control over the formatting and because we want to combine Google's
@@ -262,7 +264,7 @@ function enableLocationAutocomplete(){
 		inputGoogleMapsApiKey = document.getElementById("google_maps_api_key"),
 		scriptGoogleMapsApi = document.createElement("script"),
 		divSuggestions = document.createElement("div"),
-		locationAutocompleters = {},
+		locationAutocompleters = [],
 		inputToSuggest = null,
 		inputToSuggestLastValue = "",
 		inputsLocation = document.getElementsByClassName("text-location"),
@@ -275,13 +277,13 @@ function enableLocationAutocomplete(){
 				console.log("   " + suggestions[i].secondaryText);
 			}
 		},
-		makeResultCallback = function(inputElement, heading){
-			return function(suggestions){
+		makeResultCallback = function(inputElement){
+			return function(heading, suggestions){
 				presentSuggestions(inputElement, heading, suggestions);
 			};
 		},
 		callbackKeyUp = function(event){
-			var heading, target = event.target || event.srcElement;
+			var i, target = event.target || event.srcElement;
 			if(target != inputToSuggest){
 				inputToSuggestLastValue = "";
 				inputToSuggest = target;
@@ -296,13 +298,11 @@ function enableLocationAutocomplete(){
 				){
 					// The value in the input field has changed.
 					// Get new suggestions from all sources.
-					for(heading in locationAutocompleters){
-						if(locationAutocompleters.hasOwnProperty(heading)){
-							locationAutocompleters[heading](
-								target,
-								makeResultCallback(target, heading)
-							);
-						}
+					for(i = 0; i < locationAutocompleters.length; ++i){
+						locationAutocompleters[i](
+							target,
+							makeResultCallback(target)
+						);
 					}
 					inputToSuggestLastValue = target.value;
 				}
@@ -327,7 +327,7 @@ function enableLocationAutocomplete(){
 				SEARCH_CIRCLE_RADIUS = 4500,
 				service = new google_maps_places["AutocompleteService"]();
 			// Register the source.
-			locationAutocompleters["From Google Maps"] = function(
+			locationAutocompleters.push(function(
 				inputElement,
 				callback
 			){
@@ -399,11 +399,11 @@ function enableLocationAutocomplete(){
 									objectSF["secondary_text"];
 								arraySuggestions.push(suggestion);
 							}
-							callback(arraySuggestions);
+							callback("From Google Maps", arraySuggestions);
 						}
 					}
 				);
-			};
+			});
 		};
 		// Inject Google's script.
 		scriptGoogleMapsApi.src = "https://maps.googleapis.com/maps/api/js?" +
