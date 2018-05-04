@@ -30,5 +30,5 @@ input[type=number] {
 	text-align: right;
 }
 #fieldset_where .input-table > * > :first-child {
-	width: 80px;
+	padding-right: 3px;
 }
