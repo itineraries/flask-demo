@@ -32,3 +32,29 @@ input[type=number] {
 #fieldset_where .input-table > * > :first-child {
 	padding-right: 3px;
 }
+#autocomplete-suggestions {
+	margin: 0;
+	padding: 0;
+	border: 1px solid;
+	max-height: 300px;
+	overflow-y: scroll;
+}
+#autocomplete-suggestions ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+#autocomplete-suggestions > ul > li {
+	margin: 0;
+	padding: 0;
+}
+#autocomplete-suggestions li {
+	padding: 5px 10px 5px 20px;
+}
+.autocomplete-suggestions-heading {
+	background: #ccc;
+	padding: 5px;
+}
+.autocomplete-suggestions-match {
+	font-weight: bold;
+}

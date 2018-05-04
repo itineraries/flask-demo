@@ -264,23 +264,74 @@ function enableLocationAutocomplete(){
 	control over the formatting and because we want to combine Google's
 	autocomplete suggestions with our own.
 	*/
-	var i,
+	var i, ulForHeading,
 		inputGoogleMapsApiKey = document.getElementById("google_maps_api_key"),
 		scriptGoogleMapsApi = document.createElement("script"),
 		divSuggestions = document.createElement("div"),
+		ulSuggestions = document.createElement("ul"),
 		locationAutocompleters = [],
 		inputToSuggest = null,
 		inputToSuggestLastValue = "",
 		inputsLocation = document.getElementsByClassName("text-location"),
+		divSuggestionsHide = function(){
+			divSuggestions.style.display = "none";
+		},
 		presentSuggestions = function(inputElement, heading, suggestions){
-			// TODO
-			// This function will display the suggestions.
-			console.log(heading);
-			for(var i = 0; i < suggestions.length; ++i){
-				console.log(" - " + suggestions[i].mainTextParts.join("|"));
-				if(suggestions[i].secondaryText){
-					console.log("   " + suggestions[i].secondaryText);
+			/*
+			This function will display the suggestions to the user.
+			*/
+			var i, j,
+				liHeading, ulHeading, liSuggestion, divHeading,
+				divMainText, divSecondaryText, spanMainTextPart,
+				bounds = inputElement.getBoundingClientRect();
+			// Show the suggestions <div>.
+			divSuggestions.style.display = "";
+			// Calculate the position of the input element relative to the top
+			// left corner of the document (not the viewport).
+			divSuggestions.style.top = bounds.bottom + pageYOffset + "px";
+			divSuggestions.style.left = bounds.left + pageXOffset + "px";
+			// If there is not already a <ul> for this heading, create it now.
+			if(ulForHeading.hasOwnProperty(heading)){
+				ulHeading = ulForHeading[heading];
+			}else{
+				liHeading = document.createElement("li");
+				ulHeading = document.createElement("ul");
+				divHeading = document.createElement("div");
+				divHeading.textContent = heading;
+				divHeading.className = "autocomplete-suggestions-heading";
+				liHeading.appendChild(divHeading);
+				liHeading.appendChild(ulHeading);
+				ulSuggestions.appendChild(liHeading);
+				ulForHeading[heading] = ulHeading;
+			}
+			// Append an <li> for every suggestion.
+			for(i = 0; i < suggestions.length; ++i){
+				liSuggestion = document.createElement("li");
+				// Create a <div> for the main text.
+				divMainText = document.createElement("div");
+				// Create a <span> for each part of the main text.
+				for(j = 0; j < suggestions[i].mainTextParts.length; ++j){
+					// Do nothing for empty strings.
+					if(suggestions[i].mainTextParts[j].length){
+						spanMainTextPart = document.createElement("span");
+						if(!(j & 1)){
+							spanMainTextPart.className =
+								"autocomplete-suggestions-match"
+						}
+						spanMainTextPart.textContent =
+							suggestions[i].mainTextParts[j];
+						divMainText.appendChild(spanMainTextPart);
+					}
 				}
+				liSuggestion.appendChild(divMainText);
+				// Create a <div> for the secondary text if it is not empty.
+				if(suggestions[i].secondaryText.length){
+					divSecondaryText = document.createElement("div");
+					divSecondaryText.textContent =
+						suggestions[i].secondaryText;
+					liSuggestion.appendChild(divSecondaryText);
+				}
+				ulHeading.appendChild(liSuggestion);
 			}
 		},
 		makeResultCallback = function(inputElement){
@@ -303,6 +354,9 @@ function enableLocationAutocomplete(){
 					(target.value != inputToSuggestLastValue)
 				){
 					// The value in the input field has changed.
+					// Clear the old suggestions.
+					ulSuggestions.innerHTML = "";
+					ulForHeading = {};
 					// Get new suggestions from all sources.
 					for(i = 0; i < locationAutocompleters.length; ++i){
 						locationAutocompleters[i](
@@ -320,6 +374,14 @@ function enableLocationAutocomplete(){
 		inputsLocation[i].addEventListener("keyup", callbackKeyUp);
 		inputsLocation[i].autocomplete = "off";
 	}
+	// Hide the suggestions when the window is resized.
+	addEventListener("resize", divSuggestionsHide);
+	// Add the suggestions <div> to the document.
+	divSuggestions.appendChild(ulSuggestions);
+	divSuggestions.id = "autocomplete-suggestions";
+	divSuggestions.style.position = "absolute";
+	divSuggestionsHide();
+	document.body.appendChild(divSuggestions);
 	// Add the Google Maps place autocomplete API as a source.
 	if(inputGoogleMapsApiKey){
 		// Expose this callback globally. The API calls it after loading.
