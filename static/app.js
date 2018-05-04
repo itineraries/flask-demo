@@ -200,6 +200,9 @@ PartialKeyDict.prototype.getOneStartingFrom = function(key, index){
 	Just keep in mind that this class allows duplicate keys while objects in
 	JavaScript do not.
 	*/
+	if(!this.heap.length){
+		return null;
+	}
 	// If this node's key is equal to the desired key, then return the value.
 	if(this.heap[index][0] == key){
 		return this.heap[index][1];
