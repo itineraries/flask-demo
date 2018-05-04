@@ -577,7 +577,7 @@ function enableLocationAutocomplete(){
 									}
 									// Add what the user typed.
 									suggestion.addMainTextPart(
-										inputElement.value.length,
+										inputElement.value,
 										true
 									);
 									lastOffset = 
