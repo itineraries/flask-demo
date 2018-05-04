@@ -424,7 +424,6 @@ function enableLocationAutocomplete(){
 	// Add the <datalist> elements as a source.
 	(function(){
 		var i,
-			originalLists = {},
 			searchIndices = {},
 			DEFAULT_CATEGORY = "Miscellaneous",
 			REGEX_WORDS = /[\w'\u2019]+/g,
@@ -506,7 +505,7 @@ function enableLocationAutocomplete(){
 					// Process this <datalist>.
 					processDatalist(inputsLocation[i].list);
 					// Associate the element with its list in our object.
-					originalLists[inputsLocation[i]] = inputsLocation[i].list;
+					inputsLocation[i].listOld = inputsLocation[i].list;
 					// Remove the list attribute from the element.
 					inputsLocation[i].removeAttribute("list");
 				}
@@ -517,8 +516,8 @@ function enableLocationAutocomplete(){
 			var i, j, category, suggestion, suggestions, value, values, pairs,
 				lastOffset, currOffset, objectDatalist, pkdCategory;
 			// Check whether this element has a <datalist> that we processed.
-			if(searchIndices.hasOwnProperty(originalLists[inputElement])){
-				objectDatalist = searchIndices[originalLists[inputElement]];
+			if(searchIndices.hasOwnProperty(inputElement.listOld)){
+				objectDatalist = searchIndices[inputElement.listOld];
 				// Loop through the categories.
 				for(category in objectDatalist){
 					if(objectDatalist.hasOwnProperty(category)){
