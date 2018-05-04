@@ -139,15 +139,17 @@ PartialKeyDict.prototype.get = function(key){
 	please do not modify the returned keys. Doing so will corrupt the internal
 	heap. Modifying the values, on the other hand, is allowed.
 	*/
-	// Use an object as a set to keep track of nodes that we need to visit.
-	var index, maxKeyIndex, maxKey, toVisit = {0: true}, result = [];
+	var index, indexEncoded, maxKeyIndex, maxKey, result = [],
+		// Use an object as a set to keep track of nodes that we need to visit.
+		toVisit = {"0": true};
 	// Visit all the nodes that are put in the set.
 	while(true){
 		// Find the index of the node with the greatest key.
 		maxKeyIndex = -1;
 		maxKey = "";
-		for(index in toVisit){
-			if(toVisit.hasOwnProperty(index)){
+		for(indexEncoded in toVisit){
+			if(toVisit.hasOwnProperty(indexEncoded)){
+				index = parseInt(indexEncoded, 36);
 				if(this.heap[index][0] >= maxKey){
 					maxKey = this.heap[index][0];
 					maxKeyIndex = index;
@@ -159,7 +161,7 @@ PartialKeyDict.prototype.get = function(key){
 			break;
 		}
 		// Remove that node from the set of nodes to visit.
-		delete toVisit[maxKeyIndex];
+		delete toVisit[maxKeyIndex.toString(36)];
 		// Check whether this node's key is greater than or equal to the key.
 		if(this.heap[maxKeyIndex][0] >= key){
 			if(startsWith(maxKey, key)){
@@ -174,10 +176,10 @@ PartialKeyDict.prototype.get = function(key){
 			// Add this node's children to the set of nodes to visit.
 			var leftIndex = maxKeyIndex * 2 + 1, rightIndex = leftIndex + 1;
 			if(leftIndex < this.heap.length){
-				toVisit[leftIndex] = true;
+				toVisit[leftIndex.toString(36)] = true;
 			}
 			if(rightIndex < this.heap.length){
-				toVisit[rightIndex] = true;
+				toVisit[rightIndex.toString(36)] = true;
 			}
 		}
 		// If this node's key is less than the key, then we know that all of
