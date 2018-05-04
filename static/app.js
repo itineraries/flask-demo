@@ -277,7 +277,9 @@ function enableLocationAutocomplete(){
 			console.log(heading);
 			for(var i = 0; i < suggestions.length; ++i){
 				console.log(" - " + suggestions[i].mainTextParts.join("|"));
-				console.log("   " + suggestions[i].secondaryText);
+				if(suggestions[i].secondaryText){
+					console.log("   " + suggestions[i].secondaryText);
+				}
 			}
 		},
 		makeResultCallback = function(inputElement){
@@ -315,6 +317,7 @@ function enableLocationAutocomplete(){
 	// Listen for keypresses on all elements with the text-location class.
 	for(i = 0; i < inputsLocation.length; ++i){
 		inputsLocation[i].addEventListener("keyup", callbackKeyUp);
+		inputsLocation[i].autocomplete = "off";
 	}
 	// Add the Google Maps place autocomplete API as a source.
 	if(inputGoogleMapsApiKey){
@@ -417,6 +420,183 @@ function enableLocationAutocomplete(){
 		scriptGoogleMapsApi.defer = true;
 		document.body.appendChild(scriptGoogleMapsApi);
 	}
+	// Add the <datalist> elements as a source.
+	(function(){
+		var i,
+			originalLists = {},
+			searchIndices = {},
+			DEFAULT_CATEGORY = "Miscellaneous",
+			REGEX_WORDS = /[\w'\u2019]+/g,
+			processDatalist = function(datalist){
+				/*
+				This function indexes the <option> elements in the specified
+				<datalist> element. The index for this <datalist> is stored in
+				searchIndices, where the key is the <datalist>. Any number of
+				callbacks may be added to locationAutocompleters.
+				
+				Arguments:
+					datalist:
+						The <datalist> elements whose <option> elements to
+						index.
+				*/
+				var i, j, category, words, word,
+					objectDatalist, pkdCategory, arrayValuesThatContainWord,
+					options = datalist.getElementsByTagName("option");
+				// Create an index for this <datalist> if it does not exist.
+				if(searchIndices.hasOwnProperty(datalist)){
+					//objectDatalist = searchIndices[datalist];
+					return;
+				}else{
+					objectDatalist = {};
+					searchIndices[datalist] = objectDatalist;
+				}
+				// For every option, add its words to the index.
+				for(i = 0; i < options.length; ++i){
+					category =
+						options[i].getAttribute("data-category") ||
+						DEFAULT_CATEGORY;
+					// Create an index for this category if it does not exist.
+					if(objectDatalist.hasOwnProperty(category)){
+						pkdCategory = objectDatalist[category];
+					}else{
+						pkdCategory = new PartialKeyDict();
+						objectDatalist[category] = pkdCategory;
+					}
+					// For every word, add the value of the <option> to an
+					// array. This array will contain strings that contain
+					// the word.
+					words = options[i].value.match(REGEX_WORDS);
+					if(words){
+						for(j = 0; j < words.length; ++j){
+							word = words[j].toLowerCase();
+							// Create an array of <option> values that contain
+							// this word if it does not exist.
+							arrayValuesThatContainWord =
+								pkdCategory.getOne(word);
+							if(arrayValuesThatContainWord === null){
+								arrayValuesThatContainWord = [];
+								pkdCategory.insert(
+									word,
+									arrayValuesThatContainWord
+								);
+							}
+							// Check that the value of this <option> is not
+							// already in the array.
+							if(
+								arrayValuesThatContainWord.indexOf(
+									options[i].value
+								) < 0
+							){
+								// Add the value of the <option> to the list.
+								arrayValuesThatContainWord.push(
+									options[i].value
+								);
+							}
+						}
+					}
+				}
+			};
+		// Process all the <datalist> elements at most once each now.
+		for(i = 0; i < inputsLocation.length; ++i){
+			// Check whether this element has a <datalist>.
+			if(inputsLocation[i].list){
+				// Check whether this <datalist> has already been processed.
+				if(!searchIndices.hasOwnProperty(inputsLocation[i].list)){
+					// Process this <datalist>.
+					processDatalist(inputsLocation[i].list);
+					// Associate the element with its list in our object.
+					originalLists[inputsLocation[i]] = inputsLocation[i].list;
+					// Remove the list attribute from the element.
+					inputsLocation[i].removeAttribute("list");
+				}
+			}
+		}
+		// Add the callback.
+		locationAutocompleters.push(function(inputElement, callback){
+			var i, j, category, suggestion, suggestions, value, values, pairs,
+				lastOffset, currOffset, objectDatalist, pkdCategory;
+			// Check whether this element has a <datalist> that we processed.
+			if(searchIndices.hasOwnProperty(originalLists[inputElement])){
+				objectDatalist = searchIndices[originalLists[inputElement]];
+				// Loop through the categories.
+				for(category in objectDatalist){
+					if(objectDatalist.hasOwnProperty(category)){
+						pkdCategory = objectDatalist[category];
+						suggestions = [];
+						// Use this object as a set.
+						values = {};
+						// Get words that start with the user input.
+						pairs = pkdCategory.get(inputElement.value);
+						// Loop through the words.
+						for(i = 0; i < pairs.length; ++i){
+							// Each pair is in the form of [key, value], where
+							// the key is the word that starts with what the
+							// user entered and the value is an array of values
+							// of <option> tags in the <datalist>. Every value
+							// includes the word and, transitively, includes
+							// what the user entered. Add all the values to
+							// the set. After this, we do not care about what
+							// the words were.
+							for(j = 0; j < pairs[i][1].length; ++j){
+								values[pairs[i][1][j]] = true;
+							}
+						}
+						// Loop through the values.
+						for(value in values){
+							if(values[value] === true){
+								suggestion = new Suggestion();
+								// Split the value at every instance of what
+								// the user entered.
+								lastOffset = 0;
+								while(lastOffset < value.length){
+									currOffset = value.indexOf(
+										inputElement.value,
+										lastOffset
+									);
+									// If there are no more instances of what
+									// the user entered, just add whatever is
+									// left and stop.
+									if(currOffset < 0){
+										suggestion.addMainTextPart(
+											value.substr(lastOffset),
+											false
+										);
+										break;
+									}
+									// If there is text between the last and
+									// this instance of what the user typed,
+									// add it.
+									if(lastOffset < currOffset){
+										suggestion.addMainTextPart(
+											value.substring(
+												lastOffset,
+												currOffset
+											),
+											false
+										);
+									}
+									// Add what the user typed.
+									suggestion.addMainTextPart(
+										inputElement.value.length,
+										true
+									);
+									lastOffset = 
+										currOffset + inputElement.value.length;
+								}
+								// Add the suggestion.
+								// We do not have secondary text.
+								suggestions.push(suggestion);
+							}
+						}
+						// Pass the suggestions to the callback.
+						if(suggestions.length){
+							callback(category, suggestions);
+						}
+					}
+				}
+			}
+		});
+	})();
 }
 window.addEventListener("load", function(){
 	var inputOrigin, inputDestination, btnUseGeolocation, btnSwitchOrigDest,
