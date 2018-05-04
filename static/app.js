@@ -4,7 +4,6 @@
 // ==/ClosureCompiler==
 /**
  *  @preserve
- *  
  *  NYU CTIP Web
  *  @author David Tsai
  */
