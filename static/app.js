@@ -504,14 +504,10 @@ function enableLocationAutocomplete(){
 				var i, j, category, words, word,
 					objectDatalist, pkdCategory, arrayValuesThatContainWord,
 					options = datalist.getElementsByTagName("option");
-				// Create an index for this <datalist> if it does not exist.
-				if(searchIndices.hasOwnProperty(datalist)){
-					//objectDatalist = searchIndices[datalist];
-					return;
-				}else{
-					objectDatalist = {};
-					searchIndices[datalist] = objectDatalist;
-				}
+				// Create an index for this <datalist>. If it already exists,
+				// replace the old index.
+				objectDatalist = {};
+				searchIndices[datalist] = objectDatalist;
 				// For every option, add its words to the index.
 				for(i = 0; i < options.length; ++i){
 					category =
