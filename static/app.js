@@ -34,6 +34,30 @@ function startsWith(a, b){
 	*/
 	return a.substr(0, b.length) == b;
 }
+function groupsOfN(array, n){
+	/*
+	Given an array, returns an array of slices of length n where each slice
+	starts at an increasing offset. For example, given [A, B, C, D, E] with
+	n = 3, the result is [[A, B, C], [B, C, D], [C, D, E]].
+	
+	It is assumed that n > 0.
+	*/
+	var i, stop = array.length - n + 1, result = [];
+	for(i = 0; i < stop; ++i){
+		result.push(array.slice(i, i + n));
+	}
+	return result;
+}
+function groupsOfAllLengths(array){
+	/*
+	Given an array, returns all possible slices except the empty one.
+	*/
+	var n, result = [];
+	for(n = 1; n <= array.length; ++n){
+		result = result.concat(groupsOfN(array, n));
+	}
+	return result;
+}
 
 /**
  *  This class represents one suggestion that autocomplete may return.
@@ -502,7 +526,7 @@ function enableLocationAutocomplete(){
 						The <datalist> elements whose <option> elements to
 						index.
 				*/
-				var i, j, category, words, word,
+				var i, j, category, words, phrase,
 					objectDatalist, pkdCategory, arrayValuesThatContainWord,
 					options = datalist.getElementsByTagName("option");
 				// Create an index for this <datalist>. If it already exists,
@@ -524,18 +548,21 @@ function enableLocationAutocomplete(){
 					// For every word, add the value of the <option> to an
 					// array. This array will contain strings that contain
 					// the word.
-					words = options[i].value.match(REGEX_WORDS);
+					words = options[i].value.toLowerCase().match(REGEX_WORDS);
 					if(words){
+						// Group the words into phrases of all possible lengths
+						// and add all the phrases to the PartialKeyDict.
+						words = groupsOfAllLengths(words);
 						for(j = 0; j < words.length; ++j){
-							word = words[j].toLowerCase();
+							phrase = words[j].join(" ");
 							// Create an array of <option> values that contain
-							// this word if it does not exist.
+							// this phrase if it does not exist.
 							arrayValuesThatContainWord =
-								pkdCategory.getOne(word);
+								pkdCategory.getOne(phrase);
 							if(arrayValuesThatContainWord === null){
 								arrayValuesThatContainWord = [];
 								pkdCategory.insert(
-									word,
+									phrase,
 									arrayValuesThatContainWord
 								);
 							}
