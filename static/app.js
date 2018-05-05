@@ -487,6 +487,7 @@ function enableLocationAutocomplete(){
 	(function(){
 		var i,
 			searchIndices = {},
+			lowercaseCache = {},
 			DEFAULT_CATEGORY = "Miscellaneous",
 			REGEX_WORDS = /[\w'\u2019]+/g,
 			processDatalist = function(datalist){
@@ -552,6 +553,9 @@ function enableLocationAutocomplete(){
 							}
 						}
 					}
+					// Add the value in lowercase to the lowercase cache.
+					lowercaseCache[options[i].value] =
+						options[i].value.toLowerCase();
 				}
 			};
 		// Process all the <datalist> elements at most once each now.
@@ -572,6 +576,7 @@ function enableLocationAutocomplete(){
 		// Add the callback.
 		locationAutocompleters.push(function(inputElement, callback){
 			var i, j, category, suggestion, suggestions, value, values, pairs,
+				words, inputCleaned, valueLower,
 				lastOffset, currOffset, objectDatalist, pkdCategory;
 			// Check whether this element has a <datalist> that we processed.
 			if(searchIndices.hasOwnProperty(inputElement.listOld)){
@@ -583,8 +588,19 @@ function enableLocationAutocomplete(){
 						suggestions = [];
 						// Use this object as a set.
 						values = {};
+						// Convert the user input to lowercase and replace
+						// multiple consecutive spaces with one.
+						words = inputElement.value.match(REGEX_WORDS);
+						if(words){
+							for(i = 0; i < words.length; ++i){
+								words[i] = words[i].toLowerCase();
+							}
+							inputCleaned = words.join(" ");
+						}else{
+							inputCleaned = "";
+						}
 						// Get words that start with the user input.
-						pairs = pkdCategory.get(inputElement.value);
+						pairs = pkdCategory.get(inputCleaned);
 						// Loop through the words.
 						for(i = 0; i < pairs.length; ++i){
 							// Each pair is in the form of [key, value], where
@@ -603,12 +619,19 @@ function enableLocationAutocomplete(){
 						for(value in values){
 							if(values[value] === true){
 								suggestion = new Suggestion();
+								// Convert the value to lowercase for matching;
+								// the displayed string will be in its original
+								// case. On the mobile devices on which we
+								// tested this, caching was usually faster than
+								// recomputing. Test it yourself:
+								// https://jsperf.com/cache-tolowercase
+								valueLower = lowercaseCache[value];
 								// Split the value at every instance of what
 								// the user entered.
 								lastOffset = 0;
 								while(lastOffset < value.length){
-									currOffset = value.indexOf(
-										inputElement.value,
+									currOffset = valueLower.indexOf(
+										inputCleaned,
 										lastOffset
 									);
 									// If there are no more instances of what
@@ -635,11 +658,14 @@ function enableLocationAutocomplete(){
 									}
 									// Add what the user typed.
 									suggestion.addMainTextPart(
-										inputElement.value,
+										value.substr(
+											currOffset,
+											inputCleaned.length
+										),
 										true
 									);
 									lastOffset = 
-										currOffset + inputElement.value.length;
+										currOffset + inputCleaned.length;
 								}
 								// Add the suggestion.
 								// We do not have secondary text.
