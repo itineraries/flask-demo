@@ -300,14 +300,14 @@ function enableLocationAutocomplete(){
 		divSuggestionsHide = function(){
 			divSuggestions.style.display = "none";
 		},
-		presentSuggestions = function(inputElement, heading, suggestions){
+		presentSuggestions = function(heading, suggestions){
 			/*
 			This function will display the suggestions to the user.
 			*/
 			var i, j,
 				liHeading, ulHeading, liSuggestion, divHeading,
 				divMainText, divSecondaryText, spanMainTextPart,
-				bounds = inputElement.getBoundingClientRect();
+				bounds = inputToSuggest.getBoundingClientRect();
 			// Show the suggestions <div>.
 			divSuggestions.style.display = "";
 			// Calculate the position of the input element relative to the top
@@ -358,10 +358,6 @@ function enableLocationAutocomplete(){
 				ulHeading.appendChild(liSuggestion);
 			}
 		},
-		makeResultCallback = function(inputElement){
-			return function(heading, suggestions){
-				presentSuggestions(inputElement, heading, suggestions);
-			};
 		},
 		callbackKeyUp = function(event){
 			var i, target = event.target || event.srcElement;
@@ -385,7 +381,7 @@ function enableLocationAutocomplete(){
 					for(i = 0; i < locationAutocompleters.length; ++i){
 						locationAutocompleters[i](
 							target,
-							makeResultCallback(target)
+							presentSuggestions
 						);
 					}
 					inputToSuggestLastValue = target.value;
