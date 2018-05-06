@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import Secrets
 import cgi, datetime, dateutil.parser, os.path, pytz, sys
 from flask import Flask, render_template, request, send_from_directory, url_for
 for sam_dir in (
@@ -249,7 +250,8 @@ def root():
         when=datetime_trip.strftime("%H:%M"),
         walking_max_mode=walking_max_mode,
         walking_max_custom=walking_max_custom,
-        output_escaped=output_escaped
+        output_escaped=output_escaped,
+        google_maps_api_key=Secrets.google_maps_api_key
     )
 
 @app.route("/departures")
@@ -294,7 +296,8 @@ def departures():
         stops=stops.names_sorted,
         weekdays_checked=weekdays_checked,
         when=datetime_trip.strftime("%H:%M"),
-        output_escaped=output_escaped
+        output_escaped=output_escaped,
+        google_maps_api_key=Secrets.google_maps_api_key
     )
 
 @app.route("/favicon.ico")

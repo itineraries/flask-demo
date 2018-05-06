@@ -9,6 +9,11 @@ to serve itineraries over a web interface.
    to `..` so that `scheduler-and-mapper` and `flask-demo` are in the same
    parent directory. Follow the setup instructions for `scheduler-and-mapper`.
 2. Install Python dependencies by executing `pip install -r requirements.txt`.
+3. Get a
+   [Google Maps JavaScript](https://developers.google.com/maps/documentation/javascript)
+   API key and either store it in an environment variable called
+   `GMAPS_CLIENT_SIDE_KEY` or store it with this command:
+   `keyring set google_maps client_side`
 
 ## Note: Production Branch
 The `master` branch should never contain files from the `scheduler-and-mapper`
