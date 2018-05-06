@@ -508,6 +508,7 @@ function enableLocationAutocomplete(){
 					setInputToSuggestion(getCurrentSelection());
 				}
 				break;
+			case "Down":
 			case "ArrowDown":
 				event.preventDefault();
 				changeSelectionTo(
@@ -515,6 +516,7 @@ function enableLocationAutocomplete(){
 					true
 				);
 				break;
+			case "Up":
 			case "ArrowUp":
 				event.preventDefault();
 				changeSelectionTo(
