@@ -303,6 +303,24 @@ function enableLocationAutocomplete(){
 		inputToSuggestLastValue = "",
 		suggestionActive = false,
 		inputsLocation = document.getElementsByClassName("text-location"),
+		divSuggestionsMove = function(){
+			// Ensure that the suggestions <div> does not extend past the
+			// bottom of the viewport.
+			// https://stackoverflow.com/a/8876069/1149181
+			if(divSuggestions.style.display != "none"){
+				divSuggestions.style.maxHeight =
+					Math.max(
+						document.documentElement.clientHeight,
+						window.innerHeight || 0
+					) -
+					divSuggestions.getBoundingClientRect().top - 12 + "px";
+				// Calculate the position of the input element relative to the
+				// top left corner of the document (not the viewport).
+				var bounds = inputToSuggest.getBoundingClientRect();
+				divSuggestions.style.top = bounds.bottom + pageYOffset + "px";
+				divSuggestions.style.left = bounds.left + pageXOffset + "px";
+			}
+		},
 		divSuggestionsHide = function(){
 			divSuggestions.style.display = "none";
 		},
@@ -430,14 +448,10 @@ function enableLocationAutocomplete(){
 			*/
 			var i, j,
 				liHeading, ulHeading, liSuggestion, divHeading,
-				divMainText, divSecondaryText, spanMainTextPart,
-				bounds = inputToSuggest.getBoundingClientRect();
+				divMainText, divSecondaryText, spanMainTextPart;
 			// Show the suggestions <div>.
 			divSuggestions.style.display = "";
-			// Calculate the position of the input element relative to the top
-			// left corner of the document (not the viewport).
-			divSuggestions.style.top = bounds.bottom + pageYOffset + "px";
-			divSuggestions.style.left = bounds.left + pageXOffset + "px";
+			divSuggestionsMove();
 			// If there is not already a <ul> for this heading, create it now.
 			if(ulForHeading.hasOwnProperty(heading)){
 				ulHeading = ulForHeading[heading];
@@ -547,8 +561,10 @@ function enableLocationAutocomplete(){
 		inputsLocation[i].addEventListener("blur", callbackBlur);
 		inputsLocation[i].autocomplete = "off";
 	}
-	// Hide the suggestions when the window is resized.
-	addEventListener("resize", divSuggestionsHide);
+	// Update the position of the suggestions <div> when the viewport is
+	// resized or the document is scrolled.
+	addEventListener("resize", divSuggestionsMove);
+	addEventListener("scroll", divSuggestionsMove);
 	// Add the suggestions <div> to the document.
 	divSuggestions.appendChild(ulSuggestions);
 	divSuggestions.id = "autocomplete-suggestions";
