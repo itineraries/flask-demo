@@ -46,6 +46,7 @@
 								<input 
 									name="orig"
 									id="text-orig"
+									class="text-location"
 									type="text"
 									value="{{ origin|e }}"
 									list="stops"
@@ -57,6 +58,7 @@
 								<input
 									name="dest"
 									id="text-dest"
+									class="text-location"
 									type="text"
 									value="{{ destination|e }}"
 									list="stops"
@@ -184,13 +186,18 @@
 				<datalist id="stops">{%
 					for stop in stops
 				%}
-					<option>{{ stop|e }}</option>{% 
+					<option data-category="Bus Stops">{{ stop|e }}</option>{% 
 					endfor
 				%}
 				</datalist>
 			</form>
 			<div id="output">{{ output_escaped|safe }}</div>
 		</div>
+		<input
+			type="hidden"
+			id="google_maps_api_key"
+			value="{{ google_maps_api_key|e }}"
+		>
 		<script
 			type="text/javascript"
 			src="{{ url_for('static', filename='app.min.js') }}"

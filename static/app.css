@@ -30,5 +30,37 @@ input[type=number] {
 	text-align: right;
 }
 #fieldset_where .input-table > * > :first-child {
-	width: 80px;
+	padding-right: 3px;
+}
+#autocomplete-suggestions {
+	margin: 0;
+	padding: 0;
+	border: 1px solid;
+	max-height: 300px;
+	overflow-y: scroll;
+}
+#autocomplete-suggestions ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+#autocomplete-suggestions > ul > li {
+	margin: 0;
+	padding: 0;
+	cursor: default;
+}
+#autocomplete-suggestions li {
+	padding: 5px 10px 5px 20px;
+	cursor: pointer;
+}
+.autocomplete-suggestions-heading {
+	background: #ccc;
+	padding: 5px;
+}
+.autocomplete-suggestions-match {
+	font-weight: bold;
+}
+.autocomplete-suggestions-selection {
+	background: #06f;
+	color: #fff;
 }
