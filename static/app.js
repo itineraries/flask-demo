@@ -503,8 +503,10 @@ function enableLocationAutocomplete(){
 			switch(event.key){
 			case "Tab":
 			case "Enter":
-				event.preventDefault();
-				setInputToSuggestion(getCurrentSelection());
+				if(divSuggestions.style.display != "none"){
+					event.preventDefault();
+					setInputToSuggestion(getCurrentSelection());
+				}
 				break;
 			case "ArrowDown":
 				event.preventDefault();
@@ -758,11 +760,11 @@ function enableLocationAutocomplete(){
 				if(!searchIndices.hasOwnProperty(inputsLocation[i].list)){
 					// Process this <datalist>.
 					processDatalist(inputsLocation[i].list);
-					// Associate the element with its list in our object.
-					inputsLocation[i].listOld = inputsLocation[i].list;
-					// Remove the list attribute from the element.
-					inputsLocation[i].removeAttribute("list");
 				}
+				// Associate the element with its list in our object.
+				inputsLocation[i].listOld = inputsLocation[i].list;
+				// Remove the list attribute from the element.
+				inputsLocation[i].removeAttribute("list");
 			}
 		}
 		// Add the callback.
