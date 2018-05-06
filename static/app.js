@@ -503,8 +503,10 @@ function enableLocationAutocomplete(){
 			switch(event.key){
 			case "Tab":
 			case "Enter":
-				event.preventDefault();
-				setInputToSuggestion(getCurrentSelection());
+				if(divSuggestions.style.display != "none"){
+					event.preventDefault();
+					setInputToSuggestion(getCurrentSelection());
+				}
 				break;
 			case "ArrowDown":
 				event.preventDefault();
