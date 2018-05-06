@@ -47,9 +47,11 @@ input[type=number] {
 #autocomplete-suggestions > ul > li {
 	margin: 0;
 	padding: 0;
+	cursor: default;
 }
 #autocomplete-suggestions li {
 	padding: 5px 10px 5px 20px;
+	cursor: pointer;
 }
 .autocomplete-suggestions-heading {
 	background: #ccc;
@@ -57,4 +59,8 @@ input[type=number] {
 }
 .autocomplete-suggestions-match {
 	font-weight: bold;
+}
+.autocomplete-suggestions-selection {
+	background: #06f;
+	color: #fff;
 }

@@ -289,6 +289,11 @@ function enableLocationAutocomplete(){
 	autocomplete suggestions with our own.
 	*/
 	var i, ulForHeading,
+		SCROLL_INTO_VIEW_OPTIONS = {
+			"behavior": "smooth",
+			"block": "nearest",
+			"inline": "nearest"
+		},
 		inputGoogleMapsApiKey = document.getElementById("google_maps_api_key"),
 		scriptGoogleMapsApi = document.createElement("script"),
 		divSuggestions = document.createElement("div"),
@@ -296,9 +301,129 @@ function enableLocationAutocomplete(){
 		locationAutocompleters = [],
 		inputToSuggest = null,
 		inputToSuggestLastValue = "",
+		suggestionActive = false,
 		inputsLocation = document.getElementsByClassName("text-location"),
 		divSuggestionsHide = function(){
 			divSuggestions.style.display = "none";
+		},
+		getCurrentSelection = function(){
+			// Find the suggestion that is currently selected.
+			var selections = ulSuggestions.getElementsByClassName(
+				"autocomplete-suggestions-selection"
+			);
+			if(selections.length){
+				return selections[0];
+			}
+			return null;
+		},
+		getSuggestionAbove = function(liSuggestion){
+			// Find the suggestion above the given one.
+			if(liSuggestion){
+				if(liSuggestion.previousElementSibling){
+					return liSuggestion.previousElementSibling;
+				}
+				// Go up to the <li> for the heading above the selected
+				// suggestion and then move to the previous <li>.
+				if(
+					liSuggestion.parentElement.parentElement
+					.previousElementSibling
+				){
+					var suggestions = liSuggestion.parentElement.parentElement
+						.previousElementSibling.getElementsByTagName("li");
+					if(suggestions.length){
+						return suggestions[suggestions.length - 1];
+					}
+				}
+			}
+			return null;
+		},
+		getSuggestionBelow = function(liSuggestion){
+			// Find the suggestion below the given one.
+			if(liSuggestion){
+				if(liSuggestion.nextElementSibling){
+					return liSuggestion.nextElementSibling;
+				}
+				// Go up to the <li> for the heading above the selected
+				// suggestion and then move to the next <li>.
+				if(
+					liSuggestion.parentElement.parentElement.nextElementSibling
+				){
+					var suggestions = liSuggestion.parentElement.parentElement
+						.nextElementSibling.getElementsByTagName("li");
+					if(suggestions.length){
+						return suggestions[0];
+					}
+				}
+			}
+			return null;
+		},
+		ensureSuggestionSelection = function(){
+			// If there is not a current selection, select the first <li>.
+			if(!getCurrentSelection()){
+				var selections = ulSuggestions.getElementsByTagName("ul");
+				if(selections.length){
+					if(selections[0].firstElementChild){
+						selections[0].firstElementChild.className =
+							"autocomplete-suggestions-selection";
+					}
+				}
+			}
+		},
+		changeSelectionTo = function(liSuggestion, scrollIntoView){
+			// Change the currently-selected suggestion to the given one.
+			// If the given suggestion is null, then nothing happens.
+			if(liSuggestion){
+				var selection = getCurrentSelection();
+				// Unset the currently-selected <li> as the current selection.
+				if(selection){
+					selection.className = "";
+				}
+				// Set the given <li> as the given selection.
+				liSuggestion.className = "autocomplete-suggestions-selection";
+				// Ensure that the new selection is in view.
+				if(scrollIntoView){
+					if(liSuggestion.previousElementSibling){
+						liSuggestion.scrollIntoView(SCROLL_INTO_VIEW_OPTIONS);
+					}else{
+						liSuggestion.parentElement.parentElement
+							.scrollIntoView(SCROLL_INTO_VIEW_OPTIONS);
+					}
+				}
+			}
+		},
+		setInputToSuggestion = function(selection){
+			// Set the value of the text input to the given <li>.
+			// If the selection is null, then nothing happens.
+			if(selection){
+				inputToSuggest.value = inputToSuggestLastValue =
+					selection.firstElementChild.textContent;
+				divSuggestionsHide();
+				inputToSuggest.focus();
+			}
+		},
+		suggestionSetActive = function(){
+			suggestionActive = true;
+		},
+		suggestionSetInactive = function(){
+			suggestionActive = false;
+		},
+		setSuggestionEvents = function(liSuggestion){
+			
+			// When the user presses the mouse button or starts touching the
+			// element, make sure that the suggestions do not get hidden when
+			// the input field loses focus. Later, if the user clicks on this
+			// element, its value should become the user input.
+			liSuggestion.addEventListener("mousedown", suggestionSetActive);
+			liSuggestion.addEventListener("touchstart", suggestionSetActive);
+			liSuggestion.addEventListener("click", function(event){
+				suggestionSetInactive();
+				setInputToSuggestion(liSuggestion);
+			});
+			// When the user hovers over this element, it should become the
+			// currently-selected suggestion.
+			liSuggestion.addEventListener("mouseover", function(event){
+				changeSelectionTo(liSuggestion, false);
+			});
 		},
 		presentSuggestions = function(heading, suggestions){
 			/*
@@ -331,6 +456,7 @@ function enableLocationAutocomplete(){
 			// Append an <li> for every suggestion.
 			for(i = 0; i < suggestions.length; ++i){
 				liSuggestion = document.createElement("li");
+				setSuggestionEvents(liSuggestion);
 				// Create a <div> for the main text.
 				divMainText = document.createElement("div");
 				// Create a <span> for each part of the main text.
@@ -357,7 +483,31 @@ function enableLocationAutocomplete(){
 				}
 				ulHeading.appendChild(liSuggestion);
 			}
+			// Ensure that an <li> is selected.
+			ensureSuggestionSelection();
 		},
+		callbackKeyDown = function(event){
+			switch(event.key){
+			case "Tab":
+			case "Enter":
+				event.preventDefault();
+				setInputToSuggestion(getCurrentSelection());
+				break;
+			case "ArrowDown":
+				event.preventDefault();
+				changeSelectionTo(
+					getSuggestionBelow(getCurrentSelection()),
+					true
+				);
+				break;
+			case "ArrowUp":
+				event.preventDefault();
+				changeSelectionTo(
+					getSuggestionAbove(getCurrentSelection()),
+					true
+				);
+				break;
+			}
 		},
 		callbackKeyUp = function(event){
 			var i, target = event.target || event.srcElement;
@@ -365,33 +515,37 @@ function enableLocationAutocomplete(){
 				inputToSuggestLastValue = "";
 				inputToSuggest = target;
 			}
-			switch(event.key){
-				// TODO
-				// Up, down, enter, and tab will be implemented as cases here.
-			default:
-				if(
-					target.value.length &&
-					(target.value != inputToSuggestLastValue)
-				){
-					// The value in the input field has changed.
-					// Clear the old suggestions.
-					ulSuggestions.innerHTML = "";
-					ulForHeading = {};
-					// Get new suggestions from all sources.
-					for(i = 0; i < locationAutocompleters.length; ++i){
-						locationAutocompleters[i](
-							target,
-							presentSuggestions
-						);
-					}
-					inputToSuggestLastValue = target.value;
+			if(
+				target.value.length &&
+				(target.value != inputToSuggestLastValue)
+			){
+				// The value in the input field has changed.
+				// Clear the old suggestions.
+				ulSuggestions.innerHTML = "";
+				ulForHeading = {};
+				// Get new suggestions from all sources.
+				for(i = 0; i < locationAutocompleters.length; ++i){
+					locationAutocompleters[i](
+						target,
+						presentSuggestions
+					);
 				}
-				break;
+				inputToSuggestLastValue = target.value;
+			}
+		},
+		callbackBlur = function(event){
+			// If the mouse is not currently down on a suggestion, hide the
+			// suggestions.
+			if(!suggestionActive){
+				divSuggestionsHide();
 			}
 		};
 	// Listen for keypresses on all elements with the text-location class.
 	for(i = 0; i < inputsLocation.length; ++i){
+		inputsLocation[i].addEventListener("keydown", callbackKeyDown);
 		inputsLocation[i].addEventListener("keyup", callbackKeyUp);
+		inputsLocation[i].addEventListener("focus", suggestionSetInactive);
+		inputsLocation[i].addEventListener("blur", callbackBlur);
 		inputsLocation[i].autocomplete = "off";
 	}
 	// Hide the suggestions when the window is resized.
