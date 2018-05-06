@@ -408,7 +408,6 @@ function enableLocationAutocomplete(){
 			suggestionActive = false;
 		},
 		setSuggestionEvents = function(liSuggestion){
-			
 			// When the user presses the mouse button or starts touching the
 			// element, make sure that the suggestions do not get hidden when
 			// the input field loses focus. Later, if the user clicks on this
