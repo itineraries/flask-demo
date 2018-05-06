@@ -639,7 +639,7 @@ function enableLocationAutocomplete(){
 								}
 								// Save the suggestion.
 								suggestion.secondaryText =
-									objectSF["secondary_text"];
+									objectSF["secondary_text"] || "";
 								arraySuggestions.push(suggestion);
 							}
 							callback("From Google Maps", arraySuggestions);
