@@ -941,7 +941,7 @@ window.addEventListener("load", function(){
 				// If custom-select.js has replaced the select element, update
 				// its replacement. Otherwise, select the day of the week in
 				// the select element.
-				if(divsCustomSelect){
+				if(divsCustomSelect.length){
 					divsCustomSelect[0].children[
 						Math.min(
 							now.getDay(),

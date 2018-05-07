@@ -36,7 +36,6 @@ input[type=number] {
 	margin: 0;
 	padding: 0;
 	border: 1px solid;
-	max-height: 300px;
 	overflow-y: scroll;
 }
 #autocomplete-suggestions ul {
