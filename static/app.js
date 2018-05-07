@@ -508,6 +508,11 @@ function enableLocationAutocomplete(){
 					setInputToSuggestion(getCurrentSelection());
 				}
 				break;
+			case "Esc":
+			case "Escape":
+				event.preventDefault();
+				divSuggestionsHide();
+				break;
 			case "Down":
 			case "ArrowDown":
 				event.preventDefault();
