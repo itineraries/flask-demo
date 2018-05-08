@@ -413,8 +413,13 @@ function enableLocationAutocomplete(){
 			// Set the value of the text input to the given <li>.
 			// If the selection is null, then nothing happens.
 			if(selection){
+				// Loop through the selection's children.
+				var i, childrenText = [];
+				for(i = 0; i < selection.children.length; ++i){
+					childrenText.push(selection.children[i].textContent);
+				}
 				inputToSuggest.value = inputToSuggestLastValue =
-					selection.firstElementChild.textContent;
+					childrenText.join(", ");
 				divSuggestionsHide();
 				inputToSuggest.focus();
 			}
