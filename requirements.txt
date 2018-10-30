@@ -1,6 +1,6 @@
-attrs==17.4.0
-Flask==1.0
-keyring==12.2.0
-python-dateutil==2.7.2
-pytz==2018.4
-requests==2.18.4
+attrs==18.2.0
+Flask==1.0.2
+keyring==16.0.0
+python-dateutil==2.7.5
+pytz==2018.7
+requests==2.20.0
