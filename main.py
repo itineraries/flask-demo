@@ -2,14 +2,12 @@
 from config import Secrets
 import cgi, datetime, dateutil.parser, os.path, pytz, sys
 from flask import Flask, render_template, request, send_from_directory, url_for
+file_dir = os.path.dirname(os.path.abspath(__file__))
 for sam_dir in (
     # ./scheduler-and-mapper/
-    os.path.join(os.path.dirname(__file__), "scheduler-and-mapper"),
+    os.path.join(file_dir, "scheduler-and-mapper"),
     # ../scheduler-and-mapper/
-    os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        "scheduler-and-mapper"
-    )
+    os.path.join(os.path.dirname(file_dir), "scheduler-and-mapper")
 ):
     # Look for the scheduler-and-mapper directory.
     if os.path.isdir(sam_dir):
