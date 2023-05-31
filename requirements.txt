@@ -1,5 +1,5 @@
 attrs==18.2.0
-Flask==1.0.2
+Flask==2.2.5
 keyring==16.0.0
 python-dateutil==2.7.5
 pytz==2018.7
